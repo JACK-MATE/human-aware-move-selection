@@ -38,14 +38,12 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
         self.mainline_plies = 0
 
         # Moves leading to the currently inspected position.
-        # Move objects are stored instead of UCI strings because
-        # this avoids unnecessary string creation for every game.
         self.previous_moves = []
 
         # First target position found in this game.
         self.observation = None
 
-        # After the first 40 plies there is no more relevant work.
+        # After 40 plies there is no more relevant work.
         self.stop_position_processing = False
 
 
@@ -66,9 +64,7 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
         tagvalue: str
     ) -> None:
 
-        self.headers[
-            tagname
-        ] = tagvalue
+        self.headers[tagname] = tagvalue
 
 
     def end_headers(self):
@@ -79,11 +75,8 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
             )
         )
 
-        # IMPORTANT:
-        #
-        # If the cheap header filters fail, python-chess uses
-        # its fast game-skipping path instead of parsing all
-        # chess moves.
+        # Skip move parsing for games that already fail
+        # the cheap header filters.
         if not self.header_suitable:
             return chess.pgn.SKIP
 
@@ -96,12 +89,12 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
 
     def begin_variation(self):
 
-        # Lichess database analysis only uses the main line.
+        # Only the main line is relevant.
         return chess.pgn.SKIP
 
 
     # =========================================================
-    # OPTIONAL FAST PATH FOR NEWER PYTHON-CHESS VERSIONS
+    # FAST STOP AFTER RELEVANT RANGE
     # =========================================================
 
     def begin_parse_san(
@@ -110,16 +103,6 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
         san: str
     ):
 
-        # Once 40 plies have been parsed, the game is known to
-        # satisfy the minimum-length requirement and all relevant
-        # positions (moves 11-20) have already been checked.
-        #
-        # Newer python-chess versions call this method before
-        # parsing SAN. Returning SKIP avoids unnecessary SAN
-        # parsing for all later moves.
-        #
-        # Older python-chess versions simply do not call this
-        # method, so it remains harmless and compatible.
         if self.stop_position_processing:
             return chess.pgn.SKIP
 
@@ -136,8 +119,6 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
         move: chess.Move
     ) -> None:
 
-        # On older python-chess versions the parser may still
-        # visit later moves. No additional work is required.
         if self.stop_position_processing:
             return
 
@@ -155,8 +136,6 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
             <= self.collector.END_FULLMOVE
         ):
 
-            # Much cheaper than constructing a FEN string
-            # for every inspected position.
             position_key = (
                 self.collector.get_fast_position_key(
                     board
@@ -184,9 +163,6 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
         # STORE PREVIOUS MOVES
         # =====================================================
 
-        # Once a target has been found, the move sequence is
-        # already stored in the observation and no longer needs
-        # to be extended.
         if self.observation is None:
 
             self.previous_moves.append(
@@ -195,7 +171,7 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
 
 
         # =====================================================
-        # STOP RELEVANT PROCESSING AFTER 40 PLIES
+        # STOP AFTER MINIMUM / RELEVANT RANGE
         # =====================================================
 
         minimum_plies = (
@@ -236,6 +212,13 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
         )
 
 
+        # Both ratings must already exist because the game
+        # passed the header filters.
+        average_rating = (
+            white_elo + black_elo
+        ) / 2.0
+
+
         if board.turn == chess.WHITE:
 
             side_to_move = "white"
@@ -251,15 +234,19 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
             opponent_rating = white_elo
 
 
+        # IMPORTANT:
+        #
+        # Rating bucket is based on the average rating
+        # of BOTH players, not the player to move.
         rating_bucket = (
             self.collector.get_rating_bucket(
-                player_rating
+                average_rating
             )
         )
 
 
-        # UCI conversion of the previous moves happens ONLY
-        # when an actual target position is found.
+        # Convert previous moves to UCI only when
+        # an actual target position is found.
         moves_to_position_uci = [
 
             previous_move.uci()
@@ -297,6 +284,9 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
             "black_rating":
                 black_elo,
 
+            "average_rating":
+                average_rating,
+
             "player_rating":
                 player_rating,
 
@@ -306,7 +296,6 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
             "rating_bucket":
                 rating_bucket,
 
-            # Original result from the PGN.
             "result":
                 self.headers.get(
                     "Result",
@@ -341,11 +330,6 @@ class FastGameVisitor(chess.pgn.BaseVisitor):
         error: Exception
     ) -> None:
 
-        # An error inside the relevant first 40 plies makes the
-        # game unusable.
-        #
-        # Errors after the relevant range are irrelevant for
-        # this experiment.
         if not self.stop_position_processing:
 
             self.parse_error = True
@@ -422,11 +406,7 @@ class TestDatasetCollector:
 
     def __init__(self):
 
-        # Maps a fast board representation to the original
-        # four-field FEN stored in balanced_candidate_positions.
-        #
-        # fast position key -> original FEN
-        #
+        # fast position key -> original four-field FEN
         self.target_positions = {}
 
 
@@ -549,18 +529,14 @@ class TestDatasetCollector:
 
 
                 print()
-                print(
-                    "=" * 60
-                )
+                print("=" * 60)
 
                 print(
                     f"Processing: "
                     f"{input_path.name}"
                 )
 
-                print(
-                    "=" * 60
-                )
+                print("=" * 60)
 
 
                 file_games = 0
@@ -577,8 +553,6 @@ class TestDatasetCollector:
                 )
 
 
-                # Visitor factory used for every game
-                # in this monthly database.
                 visitor_factory = lambda: FastGameVisitor(
                     self,
                     input_path.name
@@ -589,10 +563,6 @@ class TestDatasetCollector:
 
                     while True:
 
-                        # =====================================
-                        # FAST PGN PARSING
-                        # =====================================
-
                         scan_result = (
                             chess.pgn.read_game(
                                 text_stream,
@@ -601,7 +571,6 @@ class TestDatasetCollector:
                         )
 
 
-                        # End of compressed PGN file.
                         if scan_result is None:
                             break
 
@@ -635,10 +604,6 @@ class TestDatasetCollector:
                             file_matches += 1
 
 
-                            # ---------------------------------
-                            # Detailed observation
-                            # ---------------------------------
-
                             detailed_file.write(
 
                                 json.dumps(
@@ -650,18 +615,10 @@ class TestDatasetCollector:
                             )
 
 
-                            # ---------------------------------
-                            # Aggregation
-                            # ---------------------------------
-
                             self.add_to_aggregation(
                                 observation
                             )
 
-
-                            # ---------------------------------
-                            # Periodic disk flush
-                            # ---------------------------------
 
                             if (
                                 total_matches
@@ -715,7 +672,7 @@ class TestDatasetCollector:
                 detailed_file.flush()
 
 
-                # Checkpoint of aggregate after every month.
+                # Aggregated checkpoint after every monthly file.
                 self.save_aggregated_data(
                     aggregated_output_path
                 )
@@ -764,17 +721,13 @@ class TestDatasetCollector:
 
 
         print()
-        print(
-            "=" * 60
-        )
+        print("=" * 60)
 
         print(
             "Test dataset collection finished"
         )
 
-        print(
-            "=" * 60
-        )
+        print("=" * 60)
 
 
         print(
@@ -854,12 +807,13 @@ class TestDatasetCollector:
                 "fen"
             ]
 
+
             # Candidate FEN contains four fields.
-            # Add irrelevant counters to create a Board.
             board = chess.Board(
                 fen_key
                 + " 0 1"
             )
+
 
             fast_key = (
                 self.get_fast_position_key(
@@ -897,17 +851,6 @@ class TestDatasetCollector:
         self,
         board: chess.Board
     ) -> Tuple[Any, ...]:
-
-        # Equivalent position information to the four FEN
-        # fields used by the previous programs:
-        #
-        # - piece placement
-        # - side to move
-        # - castling rights
-        # - en-passant square
-        #
-        # Unlike board_fen(), this avoids creating a large
-        # string for every position.
 
         return (
 
@@ -1121,14 +1064,8 @@ class TestDatasetCollector:
 
 
         # ---------------------------------------------
-        # Optional PlyCount shortcut
+        # Optional PlyCount
         # ---------------------------------------------
-        #
-        # If a PGN happens to contain a PlyCount header,
-        # short games can already be skipped here.
-        #
-        # Lichess files do not need to contain this field,
-        # so absence does not reject the game.
 
         ply_count = self.parse_int(
             headers.get(
@@ -1153,7 +1090,7 @@ class TestDatasetCollector:
 
     def get_rating_bucket(
         self,
-        rating: Optional[int]
+        rating: Optional[float]
     ) -> str:
 
         if rating is None:
@@ -1161,7 +1098,7 @@ class TestDatasetCollector:
             return "unknown"
 
 
-        lower_bound = (
+        lower_bound = int(
 
             rating
             // self.RATING_BUCKET_SIZE
@@ -1183,6 +1120,38 @@ class TestDatasetCollector:
         return (
             f"{lower_bound}-"
             f"{upper_bound}"
+        )
+
+
+    # =========================================================
+    # RATING BUCKET SORT KEY
+    # =========================================================
+
+    def get_rating_bucket_sort_key(
+        self,
+        rating_bucket: str
+    ) -> Tuple[int, int]:
+
+        # Unknown values, if they ever occur, are placed last.
+        if rating_bucket == "unknown":
+
+            return (
+                1,
+                0
+            )
+
+
+        lower_bound = int(
+            rating_bucket.split(
+                "-",
+                1
+            )[0]
+        )
+
+
+        return (
+            0,
+            lower_bound
         )
 
 
@@ -1252,8 +1221,6 @@ class TestDatasetCollector:
         ] += 1
 
 
-        # Results remain in their original PGN meaning.
-
         if result == "1-0":
 
             move_data[
@@ -1286,10 +1253,30 @@ class TestDatasetCollector:
         output = {}
 
 
+        # =====================================================
+        # POSITIONS:
+        # highest total_occurrences -> lowest
+        #
+        # FEN acts as deterministic tie-breaker.
+        # =====================================================
+
+        sorted_positions = sorted(
+
+            self.aggregated_data.items(),
+
+            key=lambda item: (
+                -item[1][
+                    "total_occurrences"
+                ],
+                item[0]
+            )
+        )
+
+
         for (
             fen,
             fen_data
-        ) in self.aggregated_data.items():
+        ) in sorted_positions:
 
 
             output[
@@ -1306,12 +1293,28 @@ class TestDatasetCollector:
             }
 
 
+            # =================================================
+            # RATING BUCKETS:
+            # lowest -> highest
+            # =================================================
+
+            sorted_rating_buckets = sorted(
+
+                fen_data[
+                    "rating_buckets"
+                ].items(),
+
+                key=lambda item:
+                    self.get_rating_bucket_sort_key(
+                        item[0]
+                    )
+            )
+
+
             for (
                 rating_bucket,
                 bucket_data
-            ) in fen_data[
-                "rating_buckets"
-            ].items():
+            ) in sorted_rating_buckets:
 
 
                 output[
@@ -1332,6 +1335,7 @@ class TestDatasetCollector:
                 }
 
 
+                # Move order is deliberately left unchanged.
                 for (
                     move_uci,
                     move_data
@@ -1476,11 +1480,7 @@ if __name__ == "__main__":
     # =========================================================
     # LARGE TEST DATASETS
     # =========================================================
-    #
-    # Put downloaded .pgn.zst files in:
-    #
-    # data/raw/
-    #
+
     MONTHLY_FILES = [
 
         "lichess_db_standard_rated_2019-01.pgn.zst",
