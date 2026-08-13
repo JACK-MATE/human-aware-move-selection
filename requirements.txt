@@ -1,0 +1,3 @@
+python-chess
+zstandard~=0.21.0
+chess~=1.10.0

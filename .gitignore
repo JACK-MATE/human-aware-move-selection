@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+
+# PyCharm
+.idea/
+
+# Large Lichess raw datasets
+data/raw/*.zst
+data/raw/*.pgn
+
+# Large generated detailed datasets
+data/results/*.jsonl
+
+# Stockfish binaries
+engines/stockfish/*.exe
