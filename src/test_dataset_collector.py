@@ -1484,20 +1484,11 @@ if __name__ == "__main__":
     MONTHLY_FILES = [
 
         "lichess_db_standard_rated_2019-01.pgn.zst",
-
-        # Later:
-        #
-        # "lichess_db_standard_rated_2019-02.pgn.zst",
-        # "lichess_db_standard_rated_2019-03.pgn.zst",
-        # "lichess_db_standard_rated_2019-04.pgn.zst",
-        # "lichess_db_standard_rated_2019-05.pgn.zst",
-        # "lichess_db_standard_rated_2019-06.pgn.zst",
-        # "lichess_db_standard_rated_2019-07.pgn.zst",
-        # "lichess_db_standard_rated_2019-08.pgn.zst",
-        # "lichess_db_standard_rated_2019-09.pgn.zst",
-        # "lichess_db_standard_rated_2019-10.pgn.zst",
-        # "lichess_db_standard_rated_2019-11.pgn.zst",
-        # "lichess_db_standard_rated_2019-12.pgn.zst",
+        "lichess_db_standard_rated_2019-02.pgn.zst",
+        "lichess_db_standard_rated_2019-03.pgn.zst",
+        "lichess_db_standard_rated_2019-04.pgn.zst",
+        "lichess_db_standard_rated_2019-05.pgn.zst",
+        "lichess_db_standard_rated_2019-06.pgn.zst"
     ]
 
 
