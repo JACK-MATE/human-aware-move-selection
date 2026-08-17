@@ -4,7 +4,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Set
 
 import chess
 import chess.engine
@@ -53,64 +53,31 @@ class MetricRunner:
     # =========================================================
     # GOOD MOVE PARAMETERS
     # =========================================================
-    #
-    # All legal moves are evaluated from the SAME starting
-    # position using Stockfish MultiPV.
-    #
-    # The best legal move is used as the reference.
-    #
 
     GOOD_MOVE_MAX_LOSS_CP = 50
-
     GOOD_MOVE_DEPTH = 15
 
 
     # =========================================================
     # DTS PARAMETERS
     # =========================================================
-    #
-    # Tested depths:
-    #
-    # 6, 8, 10, 12, 14, 16, 18, 20
-    #
 
     DTS_MIN_DEPTH = 6
-
     DTS_MAX_DEPTH = 20
-
     DTS_STEP = 2
-
     DTS_STABLE_STEPS = 3
 
 
     # =========================================================
-    # EVALUATION DTS PARAMETERS
+    # EVALUATION DTS
     # =========================================================
 
     EVAL_DTS_MAX_CHANGE_CP = 30
 
 
     # =========================================================
-    # COMPLEXITY SCORE WEIGHTINGS
+    # COMPLEXITY WEIGHTINGS
     # =========================================================
-    #
-    # Tuple:
-    #
-    #     (DTS weight, GMR weight)
-    #
-    #
-    # Both Complexity variants use these same weightings:
-    #
-    #     1. Best-Move DTS + GMR
-    #     2. Evaluation DTS + GMR
-    #
-    #
-    # This makes it possible to compare:
-    #
-    #     - which DTS works better
-    #     - which weighting works better
-    #     - whether this changes by rating bucket
-    #
 
     COMPLEXITY_WEIGHTINGS = [
 
@@ -130,11 +97,33 @@ class MetricRunner:
 
 
     # =========================================================
-    # STOCKFISH PARAMETERS
+    # CHILD POSITION MODE
+    # =========================================================
+    #
+    # "observed":
+    #
+    #     Only moves that actually occurred in the test
+    #     dataset are analysed.
+    #
+    #     This is what we currently want for testing.
+    #
+    #
+    # "legal":
+    #
+    #     Every legal move from every root FEN is analysed.
+    #
+    #     This can later be used for a complete human-aware
+    #     move selector.
+    #
+
+    CHILD_MOVE_MODE = "observed"
+
+
+    # =========================================================
+    # STOCKFISH
     # =========================================================
 
     STOCKFISH_THREADS = 1
-
     STOCKFISH_HASH_MB = 32
 
 
@@ -142,14 +131,17 @@ class MetricRunner:
     # TEST LIMIT
     # =========================================================
     #
-    # Set to:
+    # IMPORTANT:
     #
-    #     None
+    # This limits ROOT positions.
     #
-    # for the complete dataset.
+    # Each root may produce several child FENs, so the actual
+    # number of positions analysed can be substantially larger.
+    #
+    # Set to None for the complete dataset.
     #
 
-    MAX_POSITIONS = 10
+    MAX_ROOT_POSITIONS = 10
 
 
     # =========================================================
@@ -182,7 +174,7 @@ class MetricRunner:
 
 
         # =====================================================
-        # LOAD TEST DATASET
+        # LOAD DATASET
         # =====================================================
 
         print(
@@ -198,39 +190,67 @@ class MetricRunner:
 
 
         print(
-            f"Unique positions in dataset: "
+            f"Unique root positions in dataset: "
             f"{len(self.dataset):,}"
         )
 
 
         # =====================================================
-        # ONLY FENS ARE REQUIRED
+        # SELECT ROOT POSITIONS
         # =====================================================
-        #
-        # Occurrences and rating buckets are deliberately not
-        # copied into metric_results.json.
-        #
 
-        positions = list(
+        root_positions = list(
             self.dataset.keys()
         )
 
 
-        if self.MAX_POSITIONS is not None:
+        if self.MAX_ROOT_POSITIONS is not None:
 
-            positions = positions[
-                :self.MAX_POSITIONS
+            root_positions = root_positions[
+                :self.MAX_ROOT_POSITIONS
             ]
 
 
         print(
-            f"Positions to analyze: "
+            f"Root positions selected: "
+            f"{len(root_positions):,}"
+        )
+
+
+        # =====================================================
+        # COLLECT ROOT + CHILD POSITIONS
+        # =====================================================
+        #
+        # We need metrics for:
+        #
+        #     P
+        #
+        # and:
+        #
+        #     P after move m
+        #
+        # because expected score compares the complexity faced
+        # by the player before the move with the complexity
+        # faced by the opponent after the move.
+        #
+
+        positions = (
+            self.collect_required_positions(
+                root_positions=
+                    root_positions
+            )
+        )
+
+
+        print(
+            f"Unique metric positions "
+            f"(roots + children): "
             f"{len(positions):,}"
         )
 
 
         # =====================================================
-        # FIND STOCKFISH
+        # STOCKFISH
         # =====================================================
 
         stockfish_path = (
@@ -250,10 +270,6 @@ class MetricRunner:
             stockfish_path
         )
 
-
-        # =====================================================
-        # START STOCKFISH
-        # =====================================================
 
         engine = (
             chess.engine.SimpleEngine.popen_uci(
@@ -278,10 +294,6 @@ class MetricRunner:
         )
 
 
-        # =====================================================
-        # RESULT STORAGE
-        # =====================================================
-
         results = {}
 
 
@@ -291,12 +303,7 @@ class MetricRunner:
             # ENGINE CONFIGURATION
             # =================================================
 
-            options = (
-                engine.options
-            )
-
-
-            if "Threads" in options:
+            if "Threads" in engine.options:
 
                 engine.configure({
                     "Threads":
@@ -304,7 +311,7 @@ class MetricRunner:
                 })
 
 
-            if "Hash" in options:
+            if "Hash" in engine.options:
 
                 engine.configure({
                     "Hash":
@@ -313,13 +320,11 @@ class MetricRunner:
 
 
             # =================================================
-            # ANALYZE POSITIONS
+            # ANALYSE ALL REQUIRED FENS
             # =================================================
 
-            total_positions = (
-                len(
-                    positions
-                )
+            total_positions = len(
+                positions
             )
 
 
@@ -351,264 +356,24 @@ class MetricRunner:
                 )
 
 
-                # =============================================
-                # BOARD
-                # =============================================
-
-                board = (
-                    chess.Board(
-                        fen
-                    )
-                )
-
-
-                legal_moves = (
-                    board.legal_moves.count()
-                )
-
-
-                # =============================================
-                # CLEAR HASH BEFORE GOOD MOVE ANALYSIS
-                # =============================================
-
-                self.clear_stockfish_hash(
-                    engine
-                )
-
-
-                # =============================================
-                # NUMBER OF GOOD MOVES
-                # =============================================
-
-                good_moves = (
-                    calculate_number_of_good_moves(
+                metrics = (
+                    self.calculate_metrics_for_fen(
                         engine=engine,
-                        fen=fen,
-                        max_eval_loss_cp=
-                            self.GOOD_MOVE_MAX_LOSS_CP,
-                        depth=
-                            self.GOOD_MOVE_DEPTH
+                        fen=fen
                     )
                 )
 
-
-                # =============================================
-                # GOOD MOVE RATIO
-                # =============================================
-
-                good_move_ratio = (
-                    calculate_good_move_ratio(
-                        engine=engine,
-                        fen=fen,
-                        max_eval_loss_cp=
-                            self.GOOD_MOVE_MAX_LOSS_CP,
-                        depth=
-                            self.GOOD_MOVE_DEPTH,
-                        precomputed_good_moves=
-                            good_moves
-                    )
-                )
-
-
-                # =============================================
-                # CLEAR HASH BEFORE DTS
-                # =============================================
-                #
-                # Good-Move MultiPV has already searched this
-                # position deeply.
-                #
-                # DTS must start with a fresh transposition
-                # table.
-                #
-
-                self.clear_stockfish_hash(
-                    engine
-                )
-
-
-                # =============================================
-                # SHARED DTS SEARCH
-                # =============================================
-                #
-                # ONE continuous search provides BOTH:
-                #
-                #     best move
-                #     evaluation
-                #
-                # at:
-                #
-                #     6, 8, 10, ..., 20
-                #
-
-                depth_data = (
-                    analyse_depth_series(
-                        engine=engine,
-                        board=board,
-                        min_depth=
-                            self.DTS_MIN_DEPTH,
-                        max_depth=
-                            self.DTS_MAX_DEPTH,
-                        step=
-                            self.DTS_STEP
-                    )
-                )
-
-
-                # =============================================
-                # BEST-MOVE DTS
-                # =============================================
-
-                (
-                    best_move_dts,
-                    best_move_dts_stabilized
-                ) = (
-                    calculate_best_move_dts(
-                        engine=engine,
-                        fen=fen,
-                        min_depth=
-                            self.DTS_MIN_DEPTH,
-                        max_depth=
-                            self.DTS_MAX_DEPTH,
-                        step=
-                            self.DTS_STEP,
-                        stable_steps=
-                            self.DTS_STABLE_STEPS,
-                        precomputed_depth_data=
-                            depth_data
-                    )
-                )
-
-
-                # =============================================
-                # EVALUATION DTS
-                # =============================================
-
-                (
-                    eval_dts,
-                    eval_dts_stabilized
-                ) = (
-                    calculate_eval_dts(
-                        engine=engine,
-                        fen=fen,
-                        min_depth=
-                            self.DTS_MIN_DEPTH,
-                        max_depth=
-                            self.DTS_MAX_DEPTH,
-                        step=
-                            self.DTS_STEP,
-                        stable_steps=
-                            self.DTS_STABLE_STEPS,
-                        max_eval_change_cp=
-                            self.EVAL_DTS_MAX_CHANGE_CP,
-                        precomputed_depth_data=
-                            depth_data
-                    )
-                )
-
-
-                # =============================================
-                # COMPLEXITY:
-                # BEST-MOVE DTS + GMR
-                # =============================================
-
-                best_move_complexity_scores = (
-                    calculate_complexity_scores(
-                        depth_to_stability=
-                            best_move_dts,
-                        stabilized=
-                            best_move_dts_stabilized,
-                        good_move_ratio=
-                            good_move_ratio,
-                        weightings=
-                            self.COMPLEXITY_WEIGHTINGS,
-                        min_depth=
-                            self.DTS_MIN_DEPTH,
-                        max_depth=
-                            self.DTS_MAX_DEPTH,
-                        step=
-                            self.DTS_STEP
-                    )
-                )
-
-
-                # =============================================
-                # COMPLEXITY:
-                # EVALUATION DTS + GMR
-                # =============================================
-                #
-                # This uses the exact same Complexity formula,
-                # but replaces Best-Move DTS with Evaluation
-                # DTS.
-                #
-                # No additional Stockfish calculation is
-                # required.
-                #
-
-                eval_complexity_scores = (
-                    calculate_complexity_scores(
-                        depth_to_stability=
-                            eval_dts,
-                        stabilized=
-                            eval_dts_stabilized,
-                        good_move_ratio=
-                            good_move_ratio,
-                        weightings=
-                            self.COMPLEXITY_WEIGHTINGS,
-                        min_depth=
-                            self.DTS_MIN_DEPTH,
-                        max_depth=
-                            self.DTS_MAX_DEPTH,
-                        step=
-                            self.DTS_STEP
-                    )
-                )
-
-
-                # =============================================
-                # STORE RESULT
-                # =============================================
 
                 results[
                     fen
-                ] = {
-
-                    "legal_moves":
-                        legal_moves,
-
-                    "number_of_good_moves":
-                        good_moves,
-
-                    "good_move_ratio":
-                        good_move_ratio,
-
-                    "best_move_dts":
-                        best_move_dts,
-
-                    "best_move_dts_stabilized":
-                        best_move_dts_stabilized,
-
-                    "eval_dts":
-                        eval_dts,
-
-                    "eval_dts_stabilized":
-                        eval_dts_stabilized,
-
-                    "complexity_scores": {
-
-                        "best_move_dts":
-                            best_move_complexity_scores,
-
-                        "eval_dts":
-                            eval_complexity_scores
-                    }
-                }
+                ] = metrics
 
 
                 # =============================================
                 # CONSOLE OUTPUT
                 # =============================================
 
-                position_runtime = (
+                runtime = (
                     time.perf_counter()
                     - position_start
                 )
@@ -616,34 +381,31 @@ class MetricRunner:
 
                 print()
 
-
                 print(
                     f"Legal moves: "
-                    f"{legal_moves}"
+                    f"{metrics['legal_moves']}"
                 )
 
 
                 print(
                     f"Good moves: "
-                    f"{good_moves}"
+                    f"{metrics['number_of_good_moves']}"
                 )
 
 
                 print(
                     f"Good Move Ratio: "
-                    f"{good_move_ratio:.4f}"
+                    f"{metrics['good_move_ratio']:.4f}"
                 )
 
 
-                # ---------------------------------------------
-                # Best-Move DTS
-                # ---------------------------------------------
-
-                if best_move_dts_stabilized:
+                if metrics[
+                    "best_move_dts_stabilized"
+                ]:
 
                     print(
                         f"Best-Move DTS: "
-                        f"{best_move_dts}"
+                        f"{metrics['best_move_dts']}"
                     )
 
                 else:
@@ -654,15 +416,13 @@ class MetricRunner:
                     )
 
 
-                # ---------------------------------------------
-                # Evaluation DTS
-                # ---------------------------------------------
-
-                if eval_dts_stabilized:
+                if metrics[
+                    "eval_dts_stabilized"
+                ]:
 
                     print(
                         f"Evaluation DTS: "
-                        f"{eval_dts}"
+                        f"{metrics['eval_dts']}"
                     )
 
                 else:
@@ -670,58 +430,12 @@ class MetricRunner:
                     print(
                         f"Evaluation DTS: "
                         f">{self.DTS_MAX_DEPTH}"
-                    )
-
-
-                # ---------------------------------------------
-                # Best-Move Complexity Scores
-                # ---------------------------------------------
-
-                print(
-                    "Complexity Scores "
-                    "(Best-Move DTS + GMR):"
-                )
-
-
-                for (
-                    weighting,
-                    score
-                ) in (
-                    best_move_complexity_scores.items()
-                ):
-
-                    print(
-                        f"  {weighting}: "
-                        f"{score:.2f}"
-                    )
-
-
-                # ---------------------------------------------
-                # Evaluation Complexity Scores
-                # ---------------------------------------------
-
-                print(
-                    "Complexity Scores "
-                    "(Evaluation DTS + GMR):"
-                )
-
-
-                for (
-                    weighting,
-                    score
-                ) in (
-                    eval_complexity_scores.items()
-                ):
-
-                    print(
-                        f"  {weighting}: "
-                        f"{score:.2f}"
                     )
 
 
                 print(
                     f"Position runtime: "
-                    f"{position_runtime:.2f} s"
+                    f"{runtime:.2f} s"
                 )
 
 
@@ -758,11 +472,9 @@ class MetricRunner:
             "=" * 60
         )
 
-
         print(
             "Metric calculation finished"
         )
-
 
         print(
             "=" * 60
@@ -770,7 +482,7 @@ class MetricRunner:
 
 
         print(
-            f"Positions analyzed: "
+            f"Metric positions analysed: "
             f"{len(results):,}"
         )
 
@@ -782,24 +494,453 @@ class MetricRunner:
 
 
     # =========================================================
-    # CLEAR STOCKFISH HASH
+    # CALCULATE METRICS FOR ONE FEN
+    # =========================================================
+
+    def calculate_metrics_for_fen(
+        self,
+        engine,
+        fen: str
+    ) -> Dict[str, Any]:
+
+        board = (
+            chess.Board(
+                fen
+            )
+        )
+
+
+        legal_moves = (
+            board.legal_moves.count()
+        )
+
+
+        # =====================================================
+        # GOOD MOVES / GMR
+        # =====================================================
+
+        self.clear_stockfish_hash(
+            engine
+        )
+
+
+        good_moves = (
+            calculate_number_of_good_moves(
+                engine=engine,
+                fen=fen,
+                max_eval_loss_cp=
+                    self.GOOD_MOVE_MAX_LOSS_CP,
+                depth=
+                    self.GOOD_MOVE_DEPTH
+            )
+        )
+
+
+        good_move_ratio = (
+            calculate_good_move_ratio(
+                engine=engine,
+                fen=fen,
+                max_eval_loss_cp=
+                    self.GOOD_MOVE_MAX_LOSS_CP,
+                depth=
+                    self.GOOD_MOVE_DEPTH,
+                precomputed_good_moves=
+                    good_moves
+            )
+        )
+
+
+        # =====================================================
+        # DTS
+        # =====================================================
+
+        self.clear_stockfish_hash(
+            engine
+        )
+
+
+        depth_data = (
+            analyse_depth_series(
+                engine=engine,
+                board=board,
+                min_depth=
+                    self.DTS_MIN_DEPTH,
+                max_depth=
+                    self.DTS_MAX_DEPTH,
+                step=
+                    self.DTS_STEP
+            )
+        )
+
+
+        (
+            best_move_dts,
+            best_move_dts_stabilized
+        ) = (
+            calculate_best_move_dts(
+                engine=engine,
+                fen=fen,
+                min_depth=
+                    self.DTS_MIN_DEPTH,
+                max_depth=
+                    self.DTS_MAX_DEPTH,
+                step=
+                    self.DTS_STEP,
+                stable_steps=
+                    self.DTS_STABLE_STEPS,
+                precomputed_depth_data=
+                    depth_data
+            )
+        )
+
+
+        (
+            eval_dts,
+            eval_dts_stabilized
+        ) = (
+            calculate_eval_dts(
+                engine=engine,
+                fen=fen,
+                min_depth=
+                    self.DTS_MIN_DEPTH,
+                max_depth=
+                    self.DTS_MAX_DEPTH,
+                step=
+                    self.DTS_STEP,
+                stable_steps=
+                    self.DTS_STABLE_STEPS,
+                max_eval_change_cp=
+                    self.EVAL_DTS_MAX_CHANGE_CP,
+                precomputed_depth_data=
+                    depth_data
+            )
+        )
+
+
+        # =====================================================
+        # COMPLEXITY – BEST-MOVE DTS
+        # =====================================================
+
+        best_complexity = (
+            calculate_complexity_scores(
+                depth_to_stability=
+                    best_move_dts,
+                stabilized=
+                    best_move_dts_stabilized,
+                good_move_ratio=
+                    good_move_ratio,
+                weightings=
+                    self.COMPLEXITY_WEIGHTINGS,
+                min_depth=
+                    self.DTS_MIN_DEPTH,
+                max_depth=
+                    self.DTS_MAX_DEPTH,
+                step=
+                    self.DTS_STEP
+            )
+        )
+
+
+        # =====================================================
+        # COMPLEXITY – EVAL DTS
+        # =====================================================
+
+        eval_complexity = (
+            calculate_complexity_scores(
+                depth_to_stability=
+                    eval_dts,
+                stabilized=
+                    eval_dts_stabilized,
+                good_move_ratio=
+                    good_move_ratio,
+                weightings=
+                    self.COMPLEXITY_WEIGHTINGS,
+                min_depth=
+                    self.DTS_MIN_DEPTH,
+                max_depth=
+                    self.DTS_MAX_DEPTH,
+                step=
+                    self.DTS_STEP
+            )
+        )
+
+
+        return {
+
+            "legal_moves":
+                legal_moves,
+
+            "number_of_good_moves":
+                good_moves,
+
+            "good_move_ratio":
+                good_move_ratio,
+
+            "best_move_dts":
+                best_move_dts,
+
+            "best_move_dts_stabilized":
+                best_move_dts_stabilized,
+
+            "eval_dts":
+                eval_dts,
+
+            "eval_dts_stabilized":
+                eval_dts_stabilized,
+
+            "complexity_scores": {
+
+                "best_move_dts":
+                    best_complexity,
+
+                "eval_dts":
+                    eval_complexity
+            }
+        }
+
+
+    # =========================================================
+    # COLLECT REQUIRED POSITIONS
+    # =========================================================
+
+    def collect_required_positions(
+        self,
+        root_positions: List[str]
+    ) -> List[str]:
+        """
+        Collects all unique positions whose metrics are required.
+
+        This always includes every selected root FEN.
+
+        Depending on CHILD_MOVE_MODE it additionally includes
+        child positions after:
+
+            "observed"
+                -> moves actually present in the dataset
+
+            "legal"
+                -> every legal move
+        """
+
+        positions = []
+
+        seen = set()
+
+
+        for root_fen in root_positions:
+
+            if root_fen not in seen:
+
+                positions.append(
+                    root_fen
+                )
+
+                seen.add(
+                    root_fen
+                )
+
+
+            moves = (
+                self.get_moves_for_root(
+                    root_fen=
+                        root_fen
+                )
+            )
+
+
+            for move_uci in moves:
+
+                child_fen = (
+                    self.create_child_fen(
+                        root_fen=
+                            root_fen,
+                        move_uci=
+                            move_uci
+                    )
+                )
+
+
+                if child_fen in seen:
+
+                    continue
+
+
+                positions.append(
+                    child_fen
+                )
+
+                seen.add(
+                    child_fen
+                )
+
+
+        return positions
+
+
+    # =========================================================
+    # GET MOVES FOR ROOT
+    # =========================================================
+
+    def get_moves_for_root(
+        self,
+        root_fen: str
+    ) -> List[str]:
+
+        if self.CHILD_MOVE_MODE == "legal":
+
+            board = chess.Board(
+                root_fen
+            )
+
+            return [
+
+                move.uci()
+
+                for move
+                in board.legal_moves
+            ]
+
+
+        if self.CHILD_MOVE_MODE != "observed":
+
+            raise ValueError(
+                "CHILD_MOVE_MODE must be "
+                "'observed' or 'legal'."
+            )
+
+
+        root_data = (
+            self.dataset[
+                root_fen
+            ]
+        )
+
+
+        observed_moves = set()
+
+
+        rating_buckets = (
+            root_data.get(
+                "rating_buckets",
+                {}
+            )
+        )
+
+
+        for bucket_data in (
+            rating_buckets.values()
+        ):
+
+            moves = (
+                bucket_data.get(
+                    "moves",
+                    {}
+                )
+            )
+
+
+            for move_uci in moves.keys():
+
+                observed_moves.add(
+                    move_uci
+                )
+
+
+        return sorted(
+            observed_moves
+        )
+
+
+    # =========================================================
+    # CREATE CHILD FEN
+    # =========================================================
+
+    def create_child_fen(
+        self,
+        root_fen: str,
+        move_uci: str
+    ) -> str:
+        """
+        Applies one move to a root FEN and returns the resulting
+        position in the same four-field FEN format used by the
+        dataset:
+
+            board
+            side to move
+            castling rights
+            en-passant square
+
+        Halfmove and fullmove counters are deliberately omitted.
+        """
+
+        board = (
+            chess.Board(
+                root_fen
+            )
+        )
+
+
+        move = (
+            chess.Move.from_uci(
+                move_uci
+            )
+        )
+
+
+        if move not in board.legal_moves:
+
+            raise ValueError(
+                f"Illegal move {move_uci} "
+                f"for FEN:\n{root_fen}"
+            )
+
+
+        board.push(
+            move
+        )
+
+
+        turn = (
+            "w"
+            if board.turn
+            else "b"
+        )
+
+
+        castling = (
+            board.castling_xfen()
+        )
+
+
+        if board.ep_square is None:
+
+            ep_square = "-"
+
+        else:
+
+            ep_square = (
+                chess.square_name(
+                    board.ep_square
+                )
+            )
+
+
+        return (
+            f"{board.board_fen()} "
+            f"{turn} "
+            f"{castling} "
+            f"{ep_square}"
+        )
+
+
+    # =========================================================
+    # CLEAR HASH
     # =========================================================
 
     def clear_stockfish_hash(
         self,
         engine
     ) -> None:
-        """
-        Clears Stockfish's transposition table.
-
-        This is done:
-
-            1. before Good Move / GMR
-            2. before DTS
-
-        so that the two engine-based metric groups do not
-        influence each other through cached search results.
-        """
 
         if "Clear Hash" in engine.options:
 
@@ -816,16 +957,11 @@ class MetricRunner:
         self,
         dataset_path: Path
     ) -> Dict[str, Any]:
-        """
-        Loads the aggregated test dataset.
-
-        Only its FEN keys are required for metric calculation.
-        """
 
         if not dataset_path.exists():
 
             raise FileNotFoundError(
-                f"Test dataset not found:\n"
+                f"Dataset not found:\n"
                 f"{dataset_path}"
             )
 
@@ -842,16 +978,13 @@ class MetricRunner:
 
 
     # =========================================================
-    # FIND STOCKFISH EXECUTABLE
+    # FIND STOCKFISH
     # =========================================================
 
     def find_stockfish_executable(
         self,
         directory: Path
     ) -> Path:
-        """
-        Finds exactly one Stockfish executable.
-        """
 
         if not directory.exists():
 
@@ -880,7 +1013,6 @@ class MetricRunner:
                 continue
 
 
-            # Windows
             if (
                 file_path.suffix.lower()
                 == ".exe"
@@ -893,7 +1025,6 @@ class MetricRunner:
                 continue
 
 
-            # Linux / macOS
             if os.access(
                 str(
                     file_path
@@ -909,8 +1040,7 @@ class MetricRunner:
         if len(candidates) == 0:
 
             raise FileNotFoundError(
-                "No Stockfish executable found in:\n"
-                f"{directory}"
+                "No Stockfish executable found."
             )
 
 
@@ -940,21 +1070,6 @@ class MetricRunner:
         output_path: Path,
         results: Dict[str, Dict[str, Any]]
     ) -> None:
-        """
-        Saves metric_results.json.
-
-        The file contains:
-
-            metric_parameters
-                -> calculation settings
-
-            positions
-                -> FEN
-                    -> metrics
-
-        Dataset-specific information such as occurrences and
-        rating buckets is deliberately excluded.
-        """
 
         output_path.parent.mkdir(
             parents=True,
@@ -964,15 +1079,7 @@ class MetricRunner:
 
         output = {
 
-            # =================================================
-            # PARAMETER OVERVIEW
-            # =================================================
-
             "metric_parameters": {
-
-                # ---------------------------------------------
-                # Stockfish
-                # ---------------------------------------------
 
                 "stockfish_name":
                     self.stockfish_name,
@@ -982,14 +1089,6 @@ class MetricRunner:
 
                 "stockfish_hash_mb":
                     self.STOCKFISH_HASH_MB,
-
-                "clear_hash_between_metric_groups":
-                    True,
-
-
-                # ---------------------------------------------
-                # Good Moves / GMR
-                # ---------------------------------------------
 
                 "good_move_max_loss_cp":
                     self.GOOD_MOVE_MAX_LOSS_CP,
@@ -1002,11 +1101,6 @@ class MetricRunner:
 
                 "good_move_reference":
                     "best_move_evaluation",
-
-
-                # ---------------------------------------------
-                # DTS
-                # ---------------------------------------------
 
                 "dts_min_depth":
                     self.DTS_MIN_DEPTH,
@@ -1026,33 +1120,13 @@ class MetricRunner:
                         + self.DTS_STEP
                     ),
 
-
-                # ---------------------------------------------
-                # Evaluation DTS
-                # ---------------------------------------------
-
                 "eval_dts_max_change_cp":
                     self.EVAL_DTS_MAX_CHANGE_CP,
-
-
-                # ---------------------------------------------
-                # Complexity
-                # ---------------------------------------------
 
                 "complexity_formula":
                     (
                         "100 * (dts_weight * normalized_dts "
                         "+ gmr_weight * (1 - gmr))"
-                    ),
-
-                "complexity_dts_normalization":
-                    (
-                        "(coded_dts - 6) / (22 - 6)"
-                    ),
-
-                "complexity_non_stabilized_dts":
-                    (
-                        "DTS > 20 is coded as 22"
                     ),
 
                 "complexity_dts_variants": [
@@ -1063,13 +1137,12 @@ class MetricRunner:
                 ],
 
                 "complexity_weightings":
-                    self.COMPLEXITY_WEIGHTINGS
+                    self.COMPLEXITY_WEIGHTINGS,
+
+                "child_move_mode":
+                    self.CHILD_MOVE_MODE
             },
 
-
-            # =================================================
-            # POSITION METRICS
-            # =================================================
 
             "positions":
                 results
@@ -1091,14 +1164,10 @@ class MetricRunner:
 
 
 # =============================================================
-# PROGRAM START
+# START
 # =============================================================
 
 if __name__ == "__main__":
-
-    # =========================================================
-    # INPUT
-    # =========================================================
 
     test_dataset_file = (
 
@@ -1109,10 +1178,6 @@ if __name__ == "__main__":
     )
 
 
-    # =========================================================
-    # OUTPUT
-    # =========================================================
-
     metric_output_file = (
 
         PROJECT_ROOT
@@ -1122,10 +1187,6 @@ if __name__ == "__main__":
     )
 
 
-    # =========================================================
-    # STOCKFISH
-    # =========================================================
-
     stockfish_directory = (
 
         PROJECT_ROOT
@@ -1133,10 +1194,6 @@ if __name__ == "__main__":
         / "stockfish"
     )
 
-
-    # =========================================================
-    # RUN
-    # =========================================================
 
     runner = (
         MetricRunner()
