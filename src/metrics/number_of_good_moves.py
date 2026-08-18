@@ -1,105 +1,140 @@
 from __future__ import annotations
 
-import chess
-
-from .stockfish_utils import (
-    analyse_legal_moves_multipv
-)
+from typing import Any, Dict, Tuple
 
 
-def calculate_number_of_good_moves(
-    engine,
-    fen: str,
-    max_eval_loss_cp: int = 50,
-    depth: int = 15
-) -> int:
+# =============================================================
+# NUMBER OF GOOD MOVES
+# =============================================================
+
+def calculate_good_move_data(
+    move_evaluations: Dict[
+        str,
+        Dict[str, Any]
+    ],
+    max_eval_loss_cp: int = 50
+) -> Tuple[
+    int,
+    Dict[str, Dict[str, Any]]
+]:
     """
-    Calculates the number of good legal moves.
+    Uses the already completed MultiPV analysis to calculate:
 
-    All legal moves are evaluated with Stockfish MultiPV from
-    the SAME original position.
+        Number of Good Moves
 
-    The best legal move is used as the reference.
+    and to retain for EVERY legal move:
 
-    A move is considered good if:
+        evaluation_cp
+        loss_cp
+        is_good
+        WDL
+
+
+    A move is defined as good if:
 
         best_evaluation - move_evaluation
             <= max_eval_loss_cp
 
-    Example:
 
-        Best move:      +0.80
-        Move A:         +0.62
-        Loss:              18 cp -> good
-
-        Move B:         +0.35
-        Loss:              45 cp -> good
-
-        Move C:         -0.10
-        Loss:              90 cp -> not good
-
-    If legal moves exist, the best move itself always has an
-    evaluation loss of 0 and is therefore always a good move.
+    No Stockfish analysis happens in this function.
+    It only processes already calculated values.
     """
 
-    board = chess.Board(
-        fen
-    )
+    if len(move_evaluations) == 0:
 
-
-    legal_move_count = (
-        board.legal_moves.count()
-    )
-
-
-    if legal_move_count == 0:
-
-        return 0
-
-
-    # ---------------------------------------------------------
-    # Evaluate every legal move from the same root position.
-    # ---------------------------------------------------------
-
-    move_evaluations = (
-        analyse_legal_moves_multipv(
-            engine=engine,
-            board=board,
-            depth=depth
+        return (
+            0,
+            {}
         )
-    )
 
 
-    # ---------------------------------------------------------
-    # Best legal move becomes the reference.
-    # ---------------------------------------------------------
+    # =========================================================
+    # BEST LEGAL MOVE EVALUATION
+    # =========================================================
 
     best_evaluation = max(
-        move_evaluations.values()
+
+        move_info[
+            "evaluation_cp"
+        ]
+
+        for move_info
+        in move_evaluations.values()
     )
 
 
-    # ---------------------------------------------------------
-    # Count acceptable alternatives.
-    # ---------------------------------------------------------
+    # =========================================================
+    # ANALYSE EVERY LEGAL MOVE
+    # =========================================================
 
-    good_moves = 0
+    number_of_good_moves = 0
+
+    move_data = {}
 
 
-    for evaluation in move_evaluations.values():
+    for (
+        move_uci,
+        move_info
+    ) in move_evaluations.items():
 
-        evaluation_loss = (
+
+        evaluation = (
+            move_info[
+                "evaluation_cp"
+            ]
+        )
+
+
+        # -----------------------------------------------------
+        # Evaluation loss relative to the best legal move.
+        # -----------------------------------------------------
+
+        loss_cp = (
             best_evaluation
             - evaluation
         )
 
 
-        if (
-            evaluation_loss
+        # -----------------------------------------------------
+        # Good move definition.
+        # -----------------------------------------------------
+
+        is_good = (
+            loss_cp
             <= max_eval_loss_cp
-        ):
-
-            good_moves += 1
+        )
 
 
-    return good_moves
+        if is_good:
+
+            number_of_good_moves += 1
+
+
+        # -----------------------------------------------------
+        # Retain all useful move-level raw information.
+        # -----------------------------------------------------
+
+        move_data[
+            move_uci
+        ] = {
+
+            "evaluation_cp":
+                evaluation,
+
+            "loss_cp":
+                loss_cp,
+
+            "is_good":
+                is_good,
+
+            "wdl":
+                move_info[
+                    "wdl"
+                ]
+        }
+
+
+    return (
+        number_of_good_moves,
+        move_data
+    )

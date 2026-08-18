@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import chess
 import chess.engine
@@ -10,9 +10,42 @@ import chess.engine
 # CONSTANTS
 # =============================================================
 
-# Large value used when converting mate evaluations into
-# centipawn-like numerical values.
 MATE_SCORE_CP = 100_000
+
+
+# =============================================================
+# FEN HANDLING
+# =============================================================
+
+def board_from_position_key(
+    fen: str
+) -> chess.Board:
+    """
+    Accepts both:
+
+        4-field project FEN
+        6-field normal FEN
+    """
+
+    parts = fen.split()
+
+    if len(parts) == 4:
+
+        fen = (
+            fen
+            + " 0 1"
+        )
+
+    elif len(parts) != 6:
+
+        raise ValueError(
+            "Unexpected FEN format:\n"
+            + fen
+        )
+
+    return chess.Board(
+        fen
+    )
 
 
 # =============================================================
@@ -24,90 +57,116 @@ def score_to_cp(
     pov_color: chess.Color
 ) -> int:
     """
-    Converts a Stockfish score into a numerical centipawn value.
-
-    The result is always returned from the perspective of
-    pov_color.
+    Converts a Stockfish score to centipawns from one fixed POV.
 
     Positive:
         better for pov_color
 
     Negative:
         worse for pov_color
-
-    Mate scores are converted using a very large centipawn
-    value. The distance to mate is preserved by python-chess.
     """
 
-    pov_score = score.pov(
-        pov_color
-    )
-
-    cp = pov_score.score(
-        mate_score=MATE_SCORE_CP
+    cp = (
+        score
+        .pov(pov_color)
+        .score(
+            mate_score=MATE_SCORE_CP
+        )
     )
 
     if cp is None:
+
         return 0
 
     return cp
 
 
 # =============================================================
-# SIMPLE POSITION EVALUATION
+# WDL CONVERSION
 # =============================================================
 
-def evaluate_cp(
-    engine,
-    board: chess.Board,
-    pov_color: chess.Color,
-    depth: int
-) -> int:
+def wdl_to_dict(
+    wdl,
+    pov_color: chess.Color
+) -> Dict[str, int]:
     """
-    Evaluates one position with Stockfish at a fixed depth.
+    Converts Stockfish WDL into:
 
-    This helper remains available for metrics or debugging that
-    require a simple single-position evaluation.
+        {
+            "win": ...,
+            "draw": ...,
+            "loss": ...
+        }
+
+    The result is always stored from the perspective of
+    pov_color.
+
+    In this project, pov_color is normally the player to move
+    in the original FEN.
     """
 
-    info = engine.analyse(
-        board,
-        chess.engine.Limit(
-            depth=depth
+    pov_wdl = (
+        wdl.pov(
+            pov_color
         )
     )
 
-    return score_to_cp(
-        score=info["score"],
-        pov_color=pov_color
-    )
+    return {
+
+        "win":
+            pov_wdl.wins,
+
+        "draw":
+            pov_wdl.draws,
+
+        "loss":
+            pov_wdl.losses
+    }
 
 
 # =============================================================
-# MULTIPV ANALYSIS
+# MULTIPV:
+# ALL LEGAL MOVES
 # =============================================================
 
 def analyse_legal_moves_multipv(
     engine,
     board: chess.Board,
     depth: int
-) -> Dict[chess.Move, int]:
+) -> Dict[str, Dict[str, Any]]:
     """
-    Evaluates ALL legal moves from the SAME starting position
-    using one Stockfish MultiPV search.
+    Evaluates ALL legal moves in ONE MultiPV search.
 
-    Returns:
+    For every legal move, we retain:
+
+        evaluation_cp
+        WDL
+
+    Example:
 
         {
-            chess.Move: evaluation_cp,
+            "e2e4": {
+                "evaluation_cp": 35,
+                "wdl": {
+                    "win": 310,
+                    "draw": 520,
+                    "loss": 170
+                }
+            },
+
             ...
         }
 
-    All evaluations are measured from the perspective of the
-    player who is to move in the original position.
+    All values are measured from the perspective of the player
+    to move in the ORIGINAL position.
 
-    This makes the evaluations directly comparable and allows
-    the best legal move to be used as the reference.
+    Therefore all legal moves remain directly comparable.
+
+    IMPORTANT:
+
+    This does NOT perform an additional WDL search.
+
+    WDL is simply retained from the existing MultiPV analysis.
     """
 
     legal_moves = list(
@@ -115,33 +174,38 @@ def analyse_legal_moves_multipv(
     )
 
     if len(legal_moves) == 0:
+
         return {}
 
 
-    pov_color = board.turn
+    pov_color = (
+        board.turn
+    )
 
 
-    # ---------------------------------------------------------
-    # MultiPV search
-    # ---------------------------------------------------------
+    # =========================================================
+    # ONE MULTIPV SEARCH FOR ALL LEGAL MOVES
+    # =========================================================
 
-    infos = engine.analyse(
-        board,
-        chess.engine.Limit(
-            depth=depth
-        ),
-        multipv=len(
-            legal_moves
+    infos = (
+        engine.analyse(
+            board,
+            chess.engine.Limit(
+                depth=depth
+            ),
+            multipv=len(
+                legal_moves
+            )
         )
     )
 
 
-    move_evaluations = {}
+    move_data = {}
 
 
-    # ---------------------------------------------------------
-    # Extract the first move of every principal variation.
-    # ---------------------------------------------------------
+    # =========================================================
+    # EXTRACT EACH LEGAL MOVE
+    # =========================================================
 
     for info in infos:
 
@@ -150,47 +214,85 @@ def analyse_legal_moves_multipv(
             []
         )
 
-        if len(pv) == 0:
+        score = info.get(
+            "score"
+        )
+
+        wdl = info.get(
+            "wdl"
+        )
+
+
+        if (
+            len(pv) == 0
+            or score is None
+        ):
+
             continue
 
 
-        move = pv[0]
+        # -----------------------------------------------------
+        # WDL is required because it is one of the values we
+        # deliberately want to retain for every legal move.
+        # -----------------------------------------------------
+
+        if wdl is None:
+
+            raise RuntimeError(
+                "Stockfish MultiPV did not return WDL. "
+                "Make sure UCI_ShowWDL is enabled."
+            )
 
 
-        evaluation = score_to_cp(
-            score=info["score"],
-            pov_color=pov_color
+        move_uci = (
+            pv[0].uci()
         )
 
 
-        move_evaluations[
-            move
-        ] = evaluation
+        move_data[
+            move_uci
+        ] = {
+
+            "evaluation_cp":
+                score_to_cp(
+                    score=score,
+                    pov_color=pov_color
+                ),
+
+            "wdl":
+                wdl_to_dict(
+                    wdl=wdl,
+                    pov_color=pov_color
+                )
+        }
 
 
-    # ---------------------------------------------------------
-    # Safety check
-    # ---------------------------------------------------------
+    # =========================================================
+    # SAFETY CHECK
+    # =========================================================
     #
-    # We explicitly requested one PV for every legal move.
-    # Missing moves would invalidate Number of Good Moves.
+    # We requested one PV for every legal move.
+    # Missing moves would invalidate N, GMR and the later
+    # empirical analysis of actually played moves.
     #
 
-    if len(move_evaluations) != len(legal_moves):
+    if (
+        len(move_data)
+        != len(legal_moves)
+    ):
 
         raise RuntimeError(
-            "Stockfish MultiPV did not return an evaluation "
-            "for every legal move. "
+            "Stockfish MultiPV did not return every legal move. "
             f"Expected {len(legal_moves)}, "
-            f"received {len(move_evaluations)}."
+            f"received {len(move_data)}."
         )
 
 
-    return move_evaluations
+    return move_data
 
 
 # =============================================================
-# DEPTH SERIES FOR DTS
+# DEPTH SERIES FOR BEST-MOVE DTS
 # =============================================================
 
 def analyse_depth_series(
@@ -201,34 +303,20 @@ def analyse_depth_series(
     step: int
 ) -> Dict[int, Dict[str, Any]]:
     """
-    Performs ONE continuous Stockfish search up to max_depth
-    and records the best move and evaluation at selected depths.
+    Performs ONE continuous Stockfish search.
 
-    Example with:
+    Example:
 
-        min_depth = 6
-        max_depth = 20
-        step = 2
+        6, 8, 10, ..., 24
 
-    recorded depths are:
+    For every selected depth we store:
 
-        6, 8, 10, 12, 14, 16, 18, 20
+        best move
+        evaluation
+        WDL
 
-    Returns:
-
-        {
-            6: {
-                "best_move": "e2e4",
-                "evaluation_cp": 23
-            },
-            8: {
-                ...
-            }
-        }
-
-    Best-Move DTS and Evaluation DTS can therefore use exactly
-    the same Stockfish search rather than performing two
-    independent searches.
+    Depths 22 and 24 can later be used to confirm DTBMS values
+    of 18 or 20.
     """
 
     if step <= 0:
@@ -238,14 +326,8 @@ def analyse_depth_series(
         )
 
 
-    if min_depth > max_depth:
-
-        raise ValueError(
-            "min_depth must not be greater than max_depth."
-        )
-
-
     target_depths = list(
+
         range(
             min_depth,
             max_depth + 1,
@@ -253,27 +335,29 @@ def analyse_depth_series(
         )
     )
 
-
     target_depth_set = set(
         target_depths
     )
 
-
-    pov_color = board.turn
-
+    pov_color = (
+        board.turn
+    )
 
     depth_data = {}
 
 
-    # ---------------------------------------------------------
-    # ONE iterative Stockfish search
-    # ---------------------------------------------------------
+    # =========================================================
+    # ONE CONTINUOUS SEARCH
+    # =========================================================
 
     with engine.analysis(
+
         board,
+
         chess.engine.Limit(
             depth=max_depth
         )
+
     ) as analysis:
 
         for info in analysis:
@@ -282,37 +366,30 @@ def analyse_depth_series(
                 "depth"
             )
 
-
             if depth not in target_depth_set:
+
                 continue
 
-
-            score = info.get(
-                "score"
-            )
 
             pv = info.get(
                 "pv",
                 []
             )
 
+            score = info.get(
+                "score"
+            )
 
-            # Some intermediate UCI info messages do not yet
-            # contain both score and PV.
-            if score is None:
+
+            if (
+                len(pv) == 0
+                or score is None
+            ):
+
                 continue
 
-            if len(pv) == 0:
-                continue
 
-
-            # At one search depth Stockfish may emit several
-            # updates. Overwriting the entry means that the
-            # latest available information for this depth is
-            # retained.
-            depth_data[
-                depth
-            ] = {
+            entry = {
 
                 "best_move":
                     pv[0].uci(),
@@ -325,25 +402,53 @@ def analyse_depth_series(
             }
 
 
-    # ---------------------------------------------------------
-    # Safety check
-    # ---------------------------------------------------------
+            # =================================================
+            # WDL
+            # =================================================
+
+            wdl = info.get(
+                "wdl"
+            )
+
+            if wdl is not None:
+
+                entry[
+                    "wdl"
+                ] = (
+                    wdl_to_dict(
+                        wdl=wdl,
+                        pov_color=pov_color
+                    )
+                )
+
+
+            # Stockfish can send several updates for the same
+            # depth. The latest complete one is retained.
+            depth_data[
+                depth
+            ] = entry
+
+
+    # =========================================================
+    # SAFETY CHECK
+    # =========================================================
 
     missing_depths = [
 
         depth
+
         for depth
         in target_depths
 
-        if depth not in depth_data
+        if depth
+        not in depth_data
     ]
 
 
     if len(missing_depths) > 0:
 
         raise RuntimeError(
-            "Stockfish search did not provide complete DTS "
-            "data for depths: "
+            "Stockfish did not provide complete depth data for: "
             + ", ".join(
                 str(depth)
                 for depth

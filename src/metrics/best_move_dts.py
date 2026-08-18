@@ -1,70 +1,65 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Tuple
 
-import chess
 
-from .stockfish_utils import (
-    analyse_depth_series
-)
-
+# =============================================================
+# BEST-MOVE DEPTH TO STABILITY
+# =============================================================
 
 def calculate_best_move_dts(
-    engine,
-    fen: str,
-    min_depth: int = 6,
-    max_depth: int = 20,
-    step: int = 2,
+    best_move_by_depth: Dict[int, str],
+    candidate_max_depth: int = 20,
     stable_steps: int = 3,
-    precomputed_depth_data:
-        Optional[Dict[int, Dict[str, Any]]] = None
+    step: int = 2
 ) -> Tuple[int, bool]:
     """
-    Calculates Best-Move Depth to Stability.
+    Best-Move Depth to Stability (DTBMS).
 
     Definition:
 
-    Best-Move DTS is the earliest tested depth from which the
-    best move remains unchanged for ALL remaining tested depths.
+    Earliest candidate depth from which the best move remains
+    unchanged at ALL later observed depths.
 
-    At least stable_steps observations must remain.
-
-    Example:
-
-        Depth 6   -> Move A
-        Depth 8   -> Move A
-        Depth 10  -> Move A
-        Depth 12  -> Move B
-        Depth 14  -> Move B
-        Depth 16  -> Move B
-        Depth 18  -> Move B
-        Depth 20  -> Move B
-
-    Result:
-
-        DTS = 12
-
-    The temporary stability at 6/8/10 is ignored because the
-    best move changes later.
-
-    If no sufficiently long stable suffix exists within the
-    investigated depth range, the function returns:
-
-        max tested depth + step
-
-    together with:
-
-        stabilized = False
+    At least stable_steps observations must be available.
 
     Example:
+
+        14 -> e2e4
+        16 -> e2e4
+        18 -> e2e4
+        20 -> e2e4
+        22 -> e2e4
+        24 -> e2e4
+
+    gives:
+
+        DTBMS = 14
+
+
+    IMPORTANT:
+
+    Candidate depths only go up to 20.
+
+    Depths 22 and 24 exist solely as confirmation depths.
+
+    Therefore:
+
+        20 / 22 / 24 identical
+
+    allows DTBMS = 20.
+
+    If no candidate depth <= 20 can be confirmed:
 
         return 22, False
 
-    This means:
+    meaning:
 
-        DTS > 20
+        DTBMS > 20
 
-    NOT that the exact DTS is known to be 22.
+    NOT:
+
+        DTBMS = 22
     """
 
     if stable_steps <= 0:
@@ -74,86 +69,61 @@ def calculate_best_move_dts(
         )
 
 
-    # ---------------------------------------------------------
-    # Use the shared Stockfish depth search when supplied.
-    # ---------------------------------------------------------
-
-    if precomputed_depth_data is not None:
-
-        depth_data = (
-            precomputed_depth_data
-        )
-
-
-    else:
-
-        board = chess.Board(
-            fen
-        )
-
-        depth_data = (
-            analyse_depth_series(
-                engine=engine,
-                board=board,
-                min_depth=min_depth,
-                max_depth=max_depth,
-                step=step
-            )
-        )
-
-
-    tested_depths = sorted(
-        depth_data.keys()
+    depths = sorted(
+        best_move_by_depth.keys()
     )
 
 
-    if len(tested_depths) == 0:
+    if len(depths) == 0:
 
-        raise RuntimeError(
-            "No depth data available for Best-Move DTS."
+        raise ValueError(
+            "best_move_by_depth is empty."
         )
 
 
-    # ---------------------------------------------------------
-    # Search for the earliest stable suffix.
-    # ---------------------------------------------------------
+    # =========================================================
+    # TEST EACH POSSIBLE START DEPTH
+    # =========================================================
 
-    for index, depth in enumerate(
-        tested_depths
+    for (
+        index,
+        depth
+    ) in enumerate(
+        depths
     ):
 
+        # 22 and 24 are confirmation depths only.
+        if depth > candidate_max_depth:
+
+            break
+
+
         remaining_depths = (
-            tested_depths[
+            depths[
                 index:
             ]
         )
 
 
-        # We require enough observations to actually call the
-        # result stable.
         if (
             len(remaining_depths)
             < stable_steps
         ):
 
-            break
+            continue
 
 
         reference_move = (
-            depth_data[
+            best_move_by_depth[
                 depth
-            ][
-                "best_move"
             ]
         )
 
 
         stable = all(
 
-            depth_data[
+            best_move_by_depth[
                 later_depth
-            ][
-                "best_move"
             ]
             == reference_move
 
@@ -170,17 +140,12 @@ def calculate_best_move_dts(
             )
 
 
-    # ---------------------------------------------------------
-    # Not stabilized inside investigated range.
-    # ---------------------------------------------------------
-
-    censored_dts = (
-        tested_depths[-1]
-        + step
-    )
-
+    # =========================================================
+    # NOT STABILIZED BY DEPTH 20
+    # =========================================================
 
     return (
-        censored_dts,
+        candidate_max_depth
+        + step,
         False
     )
