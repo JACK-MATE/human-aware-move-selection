@@ -100,7 +100,7 @@ class MetricRunner:
     #     None
     #
 
-    MAX_POSITIONS = 10
+    MAX_POSITIONS = None
 
 
     # =========================================================
@@ -1047,7 +1047,7 @@ if __name__ == "__main__":
         PROJECT_ROOT
         / "data"
         / "results"
-        / "test_dataset_aggregated_tops.json"
+        / "test_dataset_aggregated_top500.json"
     )
 
 

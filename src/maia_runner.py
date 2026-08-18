@@ -110,7 +110,7 @@ USE_LEAF_CACHE = True
 # =============================================================
 
 # Keep at 1 for the next runtime test.
-MAX_SIMULATIONS = 1
+MAX_SIMULATIONS = None
 
 
 # =============================================================
