@@ -1,22 +1,15 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 
 # =============================================================
-# PROJECT ROOT
+# PROJECT PATHS
 # =============================================================
 
 PROJECT_ROOT = Path(
     __file__
 ).resolve().parent.parent
-
-
-# =============================================================
-# CONFIGURATION
-# =============================================================
-
-TOP_POSITIONS = 1000
 
 
 INPUT_FILE = (
@@ -31,23 +24,29 @@ OUTPUT_FILE = (
     PROJECT_ROOT
     / "data"
     / "results"
-    / "test_dataset_aggregated_tops.json"
+    / "test_dataset_aggregated_top500.json"
 )
 
 
 # =============================================================
-# LOAD DATASET
+# SETTINGS
+# =============================================================
+
+TOP_POSITIONS = 500
+
+
+# =============================================================
+# LOAD ORIGINAL DATASET
 # =============================================================
 
 def load_dataset(
     input_path: Path
 ) -> Dict[str, Any]:
     """
-    Loads the original aggregated test dataset.
+    Loads the original aggregated dataset.
 
     IMPORTANT:
-    The input file is opened in read-only mode.
-    Nothing is written to it.
+    The source file is opened READ ONLY and is never modified.
     """
 
     if not input_path.exists():
@@ -75,8 +74,7 @@ def load_dataset(
     ):
 
         raise ValueError(
-            "Expected test_dataset_aggregated.json "
-            "to contain a JSON object."
+            "Expected the dataset to contain a JSON object."
         )
 
 
@@ -84,7 +82,7 @@ def load_dataset(
 
 
 # =============================================================
-# SELECT TOP POSITIONS
+# SELECT MOST FREQUENT POSITIONS
 # =============================================================
 
 def select_top_positions(
@@ -94,13 +92,10 @@ def select_top_positions(
     """
     Selects the positions with the highest total_occurrences.
 
-    Sorting:
+    Ties are resolved alphabetically by FEN so that the result
+    is deterministic.
 
-        1. total_occurrences descending
-        2. FEN alphabetically as deterministic tie-breaker
-
-    The complete original data belonging to each selected FEN
-    is retained unchanged.
+    The complete original entry of every selected FEN is copied.
     """
 
     sorted_positions = sorted(
@@ -119,15 +114,10 @@ def select_top_positions(
     )
 
 
-    selected_positions = (
+    return dict(
         sorted_positions[
             :number_of_positions
         ]
-    )
-
-
-    return dict(
-        selected_positions
     )
 
 
@@ -140,7 +130,7 @@ def save_dataset(
     output_path: Path
 ) -> None:
     """
-    Saves the reduced dataset to a NEW file.
+    Writes the selected positions to a NEW JSON file.
     """
 
     output_path.parent.mkdir(
@@ -169,28 +159,18 @@ def save_dataset(
 
 def main() -> None:
 
-    # =========================================================
-    # SAFETY CHECK
-    # =========================================================
-    #
-    # This prevents accidental overwriting of the original
-    # dataset even if the paths are changed later.
-    #
 
+    # Hard safety check:
+    # input and output may never be the same file.
     if (
         INPUT_FILE.resolve()
         == OUTPUT_FILE.resolve()
     ):
 
         raise ValueError(
-            "Input and output path are identical. "
-            "The original dataset must never be overwritten."
+            "Input and output file must be different."
         )
 
-
-    # =========================================================
-    # LOAD ORIGINAL DATASET
-    # =========================================================
 
     print(
         "Loading original dataset..."
@@ -205,14 +185,10 @@ def main() -> None:
 
 
     print(
-        f"Positions in original dataset: "
+        f"Original positions: "
         f"{len(dataset):,}"
     )
 
-
-    # =========================================================
-    # SELECT TOP POSITIONS
-    # =========================================================
 
     top_dataset = (
         select_top_positions(
@@ -224,46 +200,36 @@ def main() -> None:
     )
 
 
+    occurrences = [
+
+        position_data.get(
+            "total_occurrences",
+            0
+        )
+
+        for position_data
+        in top_dataset.values()
+    ]
+
+
     print(
-        f"Positions selected: "
+        f"Selected positions: "
         f"{len(top_dataset):,}"
     )
 
 
-    # =========================================================
-    # INFORMATION ABOUT FREQUENCIES
-    # =========================================================
-
-    if len(top_dataset) > 0:
-
-        occurrence_values = [
-
-            position_data.get(
-                "total_occurrences",
-                0
-            )
-
-            for position_data
-            in top_dataset.values()
-        ]
-
+    if occurrences:
 
         print(
             f"Highest occurrence count: "
-            f"{max(occurrence_values):,}"
+            f"{max(occurrences):,}"
         )
-
 
         print(
-            f"Lowest occurrence count "
-            f"among selected positions: "
-            f"{min(occurrence_values):,}"
+            f"Lowest occurrence count: "
+            f"{min(occurrences):,}"
         )
 
-
-    # =========================================================
-    # SAVE NEW FILE
-    # =========================================================
 
     save_dataset(
         dataset=
@@ -276,41 +242,19 @@ def main() -> None:
     print()
 
     print(
-        "=" * 60
-    )
-
-    print(
-        "Top dataset created successfully."
-    )
-
-    print(
-        "=" * 60
-    )
-
-
-    print(
-        "Original file remains unchanged:"
-    )
-
-    print(
-        INPUT_FILE
-    )
-
-
-    print()
-
-    print(
-        "New file:"
+        "Created:"
     )
 
     print(
         OUTPUT_FILE
     )
 
+    print()
 
-# =============================================================
-# PROGRAM START
-# =============================================================
+    print(
+        "Original dataset was not modified."
+    )
+
 
 if __name__ == "__main__":
 
