@@ -1,0 +1,383 @@
+{
+  "analysis_type": "Maia practical outcome evaluation",
+  "minimum_move_observations": 10,
+  "question_1": {
+    "question": "How closely do Maia and regular Stockfish WDL predict the actually observed point score?",
+    "empirical_score_definition": "(wins + 0.5 * draws) / observations from the perspective of the player who made the observed move.",
+    "primary_metric": "weighted_mae",
+    "secondary_metrics": [
+      "mae",
+      "rmse",
+      "weighted_rmse",
+      "bias",
+      "weighted_bias"
+    ],
+    "diagnostics": {
+      "maia_simulated_moves_total": 9466,
+      "excluded_below_min_observations": 3877,
+      "missing_dataset_position": 0,
+      "missing_dataset_bucket": 0,
+      "missing_dataset_move": 0,
+      "missing_position_metrics": 0,
+      "missing_stockfish_move": 0,
+      "maia_observation_count_mismatches": 0,
+      "included_move_rows": 5589
+    },
+    "overall_results": [
+      {
+        "model": "Maia simulation",
+        "data_points": 5589,
+        "observations": 356026,
+        "mae": 0.11830144504270444,
+        "weighted_mae": 0.10042068242924215,
+        "rmse": 0.15322085826039583,
+        "weighted_rmse": 0.13227222259382648,
+        "bias": 0.024094821774546204,
+        "weighted_bias": 0.02945370703827927
+      },
+      {
+        "model": "Stockfish WDL",
+        "data_points": 5589,
+        "observations": 356026,
+        "mae": 0.10219922239996711,
+        "weighted_mae": 0.07962861841550897,
+        "rmse": 0.1387854235152382,
+        "weighted_rmse": 0.11221090966642115,
+        "bias": -0.013915520766207006,
+        "weighted_bias": -0.011825123726918827
+      }
+    ],
+    "rating_results": [
+      {
+        "rating_bucket": "1400-1599",
+        "model": "Maia simulation",
+        "data_points": 734,
+        "observations": 25952,
+        "mae": 0.1359564963113726,
+        "weighted_mae": 0.1257745059155886,
+        "rmse": 0.17293661758282908,
+        "weighted_rmse": 0.1587232996798138,
+        "bias": 0.01639160778863454,
+        "weighted_bias": 0.013357532824942992
+      },
+      {
+        "rating_bucket": "1400-1599",
+        "model": "Stockfish WDL",
+        "data_points": 734,
+        "observations": 25952,
+        "mae": 0.11928412846190874,
+        "weighted_mae": 0.10360409602342786,
+        "rmse": 0.1621317950713917,
+        "weighted_rmse": 0.1466968804283097,
+        "bias": -0.03182606963549319,
+        "weighted_bias": -0.036833442509247846
+      },
+      {
+        "rating_bucket": "1600-1799",
+        "model": "Maia simulation",
+        "data_points": 1527,
+        "observations": 77080,
+        "mae": 0.12371148149480357,
+        "weighted_mae": 0.10761339003533306,
+        "rmse": 0.15871750026984097,
+        "weighted_rmse": 0.1401281836793376,
+        "bias": 0.022447983589646607,
+        "weighted_bias": 0.0236063113679936
+      },
+      {
+        "rating_bucket": "1600-1799",
+        "model": "Stockfish WDL",
+        "data_points": 1527,
+        "observations": 77080,
+        "mae": 0.10784902184273018,
+        "weighted_mae": 0.08926694992215879,
+        "rmse": 0.1468521168351419,
+        "weighted_rmse": 0.1257077836311445,
+        "bias": -0.019017889376401392,
+        "weighted_bias": -0.025173384795018176
+      },
+      {
+        "rating_bucket": "1800-1999",
+        "model": "Maia simulation",
+        "data_points": 1694,
+        "observations": 136450,
+        "mae": 0.1099941353097012,
+        "weighted_mae": 0.095664281527592,
+        "rmse": 0.14321741755791792,
+        "weighted_rmse": 0.12628875035317105,
+        "bias": 0.022362361198412953,
+        "weighted_bias": 0.03217695017824985
+      },
+      {
+        "rating_bucket": "1800-1999",
+        "model": "Stockfish WDL",
+        "data_points": 1694,
+        "observations": 136450,
+        "mae": 0.09451120583306147,
+        "weighted_mae": 0.07392187980945401,
+        "rmse": 0.12901483188755505,
+        "weighted_rmse": 0.1050429723445687,
+        "bias": -0.013972680647460642,
+        "weighted_bias": -0.011051832172957134
+      },
+      {
+        "rating_bucket": "2000-2199",
+        "model": "Maia simulation",
+        "data_points": 1156,
+        "observations": 91592,
+        "mae": 0.11146051358509244,
+        "weighted_mae": 0.09620394672251782,
+        "rmse": 0.14345184795909305,
+        "weighted_rmse": 0.12688709644561302,
+        "bias": 0.03167690972715002,
+        "weighted_bias": 0.035285788429571106
+      },
+      {
+        "rating_bucket": "2000-2199",
+        "model": "Stockfish WDL",
+        "data_points": 1156,
+        "observations": 91592,
+        "mae": 0.09530322472769201,
+        "weighted_mae": 0.07436455694820508,
+        "rmse": 0.12646824849136418,
+        "weighted_rmse": 0.10116571421851525,
+        "bias": -0.0010718747778561812,
+        "weighted_bias": 0.0016363383264913897
+      },
+      {
+        "rating_bucket": "2200-2399",
+        "model": "Maia simulation",
+        "data_points": 478,
+        "observations": 24952,
+        "mae": 0.11989300604510854,
+        "weighted_mae": 0.09332040311236602,
+        "rmse": 0.16013449039269992,
+        "weighted_rmse": 0.1283076053038458,
+        "bias": 0.028987657583668763,
+        "weighted_bias": 0.027958301708443423
+      },
+      {
+        "rating_bucket": "2200-2399",
+        "model": "Stockfish WDL",
+        "data_points": 478,
+        "observations": 24952,
+        "mae": 0.10183878008809223,
+        "weighted_mae": 0.07544844100673292,
+        "rmse": 0.13522984884996053,
+        "weighted_rmse": 0.10272334996593062,
+        "bias": -0.0009715169709496901,
+        "weighted_bias": 0.0017778735171529263
+      }
+    ]
+  },
+  "question_2": {
+    "question": "How accurately do Maia and regular Stockfish WDL identify the move with the best practical point-scoring prospects among the already simulated frequent moves?",
+    "minimum_eligible_moves_per_group": 2,
+    "dirichlet_prior": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "monte_carlo_samples_per_group": 20000,
+    "random_seed": 20260819,
+    "high_confidence_threshold": 0.8,
+    "primary_metrics": [
+      "mean_probability_choice_is_best",
+      "mean_posterior_expected_regret",
+      "high_confidence_accuracy"
+    ],
+    "secondary_metrics": [
+      "raw_top1_accuracy",
+      "posterior_top1_accuracy",
+      "mean_raw_empirical_regret"
+    ],
+    "diagnostics": {
+      "groups_after_n10_filter": 1965,
+      "excluded_groups_with_fewer_than_two_moves": 519,
+      "included_q2_groups": 1446
+    },
+    "overall_results": [
+      {
+        "model": "Maia simulation",
+        "groups": 1446,
+        "raw_top1_accuracy": 0.4024896265560166,
+        "posterior_top1_accuracy": 0.3969571230982019,
+        "mean_probability_choice_is_best": 0.38463782849239286,
+        "mean_posterior_expected_regret": 0.09435298862737346,
+        "mean_raw_empirical_regret": 0.07116816842316691,
+        "high_confidence_groups": 392,
+        "high_confidence_accuracy": 0.5382653061224489
+      },
+      {
+        "model": "Stockfish WDL",
+        "groups": 1446,
+        "raw_top1_accuracy": 0.3948824343015214,
+        "posterior_top1_accuracy": 0.38105117565698476,
+        "mean_probability_choice_is_best": 0.37708447441217147,
+        "mean_posterior_expected_regret": 0.09540058099922948,
+        "mean_raw_empirical_regret": 0.07232617315267145,
+        "high_confidence_groups": 392,
+        "high_confidence_accuracy": 0.5280612244897959
+      }
+    ],
+    "rating_results": [
+      {
+        "rating_bucket": "1400-1599",
+        "model": "Maia simulation",
+        "groups": 174,
+        "raw_top1_accuracy": 0.4482758620689655,
+        "posterior_top1_accuracy": 0.4367816091954023,
+        "mean_probability_choice_is_best": 0.41321551724137934,
+        "mean_posterior_expected_regret": 0.0974257888690727,
+        "mean_raw_empirical_regret": 0.0731194997969361,
+        "high_confidence_groups": 43,
+        "high_confidence_accuracy": 0.6046511627906976
+      },
+      {
+        "rating_bucket": "1400-1599",
+        "model": "Stockfish WDL",
+        "groups": 174,
+        "raw_top1_accuracy": 0.41379310344827586,
+        "posterior_top1_accuracy": 0.40804597701149425,
+        "mean_probability_choice_is_best": 0.4042278735632183,
+        "mean_posterior_expected_regret": 0.09964899601912353,
+        "mean_raw_empirical_regret": 0.07590343984684769,
+        "high_confidence_groups": 43,
+        "high_confidence_accuracy": 0.6511627906976745
+      },
+      {
+        "rating_bucket": "1600-1799",
+        "model": "Maia simulation",
+        "groups": 385,
+        "raw_top1_accuracy": 0.38701298701298703,
+        "posterior_top1_accuracy": 0.38181818181818183,
+        "mean_probability_choice_is_best": 0.36514155844155843,
+        "mean_posterior_expected_regret": 0.10221113871429108,
+        "mean_raw_empirical_regret": 0.0774384440216195,
+        "high_confidence_groups": 91,
+        "high_confidence_accuracy": 0.5494505494505495
+      },
+      {
+        "rating_bucket": "1600-1799",
+        "model": "Stockfish WDL",
+        "groups": 385,
+        "raw_top1_accuracy": 0.34285714285714286,
+        "posterior_top1_accuracy": 0.34025974025974026,
+        "mean_probability_choice_is_best": 0.34942220779220784,
+        "mean_posterior_expected_regret": 0.10598247377543861,
+        "mean_raw_empirical_regret": 0.08146605043591432,
+        "high_confidence_groups": 91,
+        "high_confidence_accuracy": 0.5384615384615384
+      },
+      {
+        "rating_bucket": "1800-1999",
+        "model": "Maia simulation",
+        "groups": 429,
+        "raw_top1_accuracy": 0.3916083916083916,
+        "posterior_top1_accuracy": 0.3916083916083916,
+        "mean_probability_choice_is_best": 0.3691399766899766,
+        "mean_posterior_expected_regret": 0.09310126546142894,
+        "mean_raw_empirical_regret": 0.06888142939700322,
+        "high_confidence_groups": 106,
+        "high_confidence_accuracy": 0.5660377358490566
+      },
+      {
+        "rating_bucket": "1800-1999",
+        "model": "Stockfish WDL",
+        "groups": 429,
+        "raw_top1_accuracy": 0.3916083916083916,
+        "posterior_top1_accuracy": 0.36596736596736595,
+        "mean_probability_choice_is_best": 0.3621645687645688,
+        "mean_posterior_expected_regret": 0.09140738122016465,
+        "mean_raw_empirical_regret": 0.06707797719628004,
+        "high_confidence_groups": 106,
+        "high_confidence_accuracy": 0.5094339622641509
+      },
+      {
+        "rating_bucket": "2000-2199",
+        "model": "Maia simulation",
+        "groups": 327,
+        "raw_top1_accuracy": 0.3944954128440367,
+        "posterior_top1_accuracy": 0.38837920489296635,
+        "mean_probability_choice_is_best": 0.39765917431192666,
+        "mean_posterior_expected_regret": 0.08702754438237807,
+        "mean_raw_empirical_regret": 0.0654434715012115,
+        "high_confidence_groups": 101,
+        "high_confidence_accuracy": 0.5148514851485149
+      },
+      {
+        "rating_bucket": "2000-2199",
+        "model": "Stockfish WDL",
+        "groups": 327,
+        "raw_top1_accuracy": 0.4036697247706422,
+        "posterior_top1_accuracy": 0.38837920489296635,
+        "mean_probability_choice_is_best": 0.3870417431192661,
+        "mean_posterior_expected_regret": 0.0892180971637128,
+        "mean_raw_empirical_regret": 0.06795170931551124,
+        "high_confidence_groups": 101,
+        "high_confidence_accuracy": 0.48514851485148514
+      },
+      {
+        "rating_bucket": "2200-2399",
+        "model": "Maia simulation",
+        "groups": 131,
+        "raw_top1_accuracy": 0.44274809160305345,
+        "posterior_top1_accuracy": 0.42748091603053434,
+        "mean_probability_choice_is_best": 0.42222671755725194,
+        "mean_posterior_expected_regret": 0.08956180145779127,
+        "mean_raw_empirical_regret": 0.07192694072288865,
+        "high_confidence_groups": 51,
+        "high_confidence_accuracy": 0.45098039215686275
+      },
+      {
+        "rating_bucket": "2200-2399",
+        "model": "Stockfish WDL",
+        "groups": 131,
+        "raw_top1_accuracy": 0.5114503816793893,
+        "posterior_top1_accuracy": 0.4961832061068702,
+        "mean_probability_choice_is_best": 0.4463335877862596,
+        "mean_posterior_expected_regret": 0.08716777174068525,
+        "mean_raw_empirical_regret": 0.06881952110082525,
+        "high_confidence_groups": 51,
+        "high_confidence_accuracy": 0.5294117647058824
+      }
+    ]
+  },
+  "maia_parameters": {
+    "schema_version": 4,
+    "rating_buckets": {
+      "1400-1599": 1500,
+      "1600-1799": 1700,
+      "1800-1999": 1900,
+      "2000-2199": 2100,
+      "2200-2399": 2300
+    },
+    "min_bucket_observations": 10,
+    "observed_move_coverage": 0.9,
+    "own_min_move_probability": 0.2,
+    "own_empty_threshold_fallback": "single_most_probable_move",
+    "opponent_top_n": 3,
+    "opponent_min_move_probability": 0.05,
+    "opponent_empty_threshold_fallback": "single_most_probable_move",
+    "maia_plies_after_observed_move": 6,
+    "stockfish_leaf_depth": 12,
+    "maia_model": "maia3-5m",
+    "stockfish_threads": 1,
+    "stockfish_hash_mb": 32,
+    "leaf_cache": true,
+    "leaf_weighting": "raw_path_probability_with_global_normalization",
+    "wdl_pov": "player_who_made_observed_move"
+  },
+  "position_metric_parameters": {
+    "good_move_max_loss_cp": 50,
+    "good_move_depth": 15,
+    "dtbms_min_depth": 6,
+    "dtbms_candidate_max_depth": 20,
+    "dtbms_search_max_depth": 24,
+    "dtbms_step": 2,
+    "dtbms_stable_steps": 3,
+    "stockfish_threads": 1,
+    "stockfish_hash_mb": 32,
+    "stockfish_wdl_pov": "side_to_move"
+  }
+}
