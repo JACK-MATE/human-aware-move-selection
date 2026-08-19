@@ -1,0 +1,17 @@
+target,model,positions,observations,spearman_rho
+Next-move error > 50 cp,GMR: 1 - GMR,100,32181,0.4703123595599972
+Next-move error > 50 cp,DTBMS + 1/N,100,32181,0.09392122134886849
+Next-move error > 50 cp,DTBMS + 1/sqrt(N),100,32181,0.08108303531615768
+Next-move error > 50 cp,DTBMS + 1/log2(N+1),100,32181,0.07563086647737269
+Next-move error > 50 cp,DTBMS only,100,32181,-0.16389482224183566
+Next-move error > 50 cp,1/N only,100,32181,0.4270433077489948
+Next-move error > 50 cp,1/sqrt(N) only,100,32181,0.4270433077489948
+Next-move error > 50 cp,1/log2(N+1) only,100,32181,0.4270433077489948
+Did not play Stockfish best move,GMR: 1 - GMR,100,32181,-0.21079305077452207
+Did not play Stockfish best move,DTBMS + 1/N,100,32181,0.2637215193075305
+Did not play Stockfish best move,DTBMS + 1/sqrt(N),100,32181,0.26620642321850024
+Did not play Stockfish best move,DTBMS + 1/log2(N+1),100,32181,0.27117120864626615
+Did not play Stockfish best move,DTBMS only,100,32181,0.3926821057163932
+Did not play Stockfish best move,1/N only,100,32181,-0.23504097126627557
+Did not play Stockfish best move,1/sqrt(N) only,100,32181,-0.23504097126627557
+Did not play Stockfish best move,1/log2(N+1) only,100,32181,-0.23504097126627557

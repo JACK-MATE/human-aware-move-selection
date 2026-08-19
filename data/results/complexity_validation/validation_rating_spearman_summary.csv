@@ -1,0 +1,81 @@
+rating_bucket,target,model,positions,observations,spearman_rho
+1400-1599,Next-move error > 50 cp,GMR: 1 - GMR,79,4560,0.5254334726605806
+1400-1599,Next-move error > 50 cp,DTBMS + 1/N,79,4560,0.0013111278424082539
+1400-1599,Next-move error > 50 cp,DTBMS + 1/sqrt(N),79,4560,-0.0017621635201747626
+1400-1599,Next-move error > 50 cp,DTBMS + 1/log2(N+1),79,4560,-0.01970708371970315
+1400-1599,Next-move error > 50 cp,DTBMS only,79,4560,-0.2849889956842257
+1400-1599,Next-move error > 50 cp,1/N only,79,4560,0.4901382084366367
+1400-1599,Next-move error > 50 cp,1/sqrt(N) only,79,4560,0.4901382084366367
+1400-1599,Next-move error > 50 cp,1/log2(N+1) only,79,4560,0.4901382084366367
+1400-1599,Did not play Stockfish best move,GMR: 1 - GMR,79,4560,-0.22156660878417814
+1400-1599,Did not play Stockfish best move,DTBMS + 1/N,79,4560,0.27156349256902723
+1400-1599,Did not play Stockfish best move,DTBMS + 1/sqrt(N),79,4560,0.27303797931059687
+1400-1599,Did not play Stockfish best move,DTBMS + 1/log2(N+1),79,4560,0.27832777917063883
+1400-1599,Did not play Stockfish best move,DTBMS only,79,4560,0.4057414358672183
+1400-1599,Did not play Stockfish best move,1/N only,79,4560,-0.24943890553603615
+1400-1599,Did not play Stockfish best move,1/sqrt(N) only,79,4560,-0.24943890553603615
+1400-1599,Did not play Stockfish best move,1/log2(N+1) only,79,4560,-0.24943890553603615
+1600-1799,Next-move error > 50 cp,GMR: 1 - GMR,96,9133,0.45653182626509137
+1600-1799,Next-move error > 50 cp,DTBMS + 1/N,96,9133,0.08091254516995994
+1600-1799,Next-move error > 50 cp,DTBMS + 1/sqrt(N),96,9133,0.07069316590522436
+1600-1799,Next-move error > 50 cp,DTBMS + 1/log2(N+1),96,9133,0.06301081801218515
+1600-1799,Next-move error > 50 cp,DTBMS only,96,9133,-0.19738068282223434
+1600-1799,Next-move error > 50 cp,1/N only,96,9133,0.41242225014068845
+1600-1799,Next-move error > 50 cp,1/sqrt(N) only,96,9133,0.41242225014068845
+1600-1799,Next-move error > 50 cp,1/log2(N+1) only,96,9133,0.41242225014068845
+1600-1799,Did not play Stockfish best move,GMR: 1 - GMR,96,9133,-0.17003062670120025
+1600-1799,Did not play Stockfish best move,DTBMS + 1/N,96,9133,0.2929273780834348
+1600-1799,Did not play Stockfish best move,DTBMS + 1/sqrt(N),96,9133,0.2904768301851287
+1600-1799,Did not play Stockfish best move,DTBMS + 1/log2(N+1),96,9133,0.297060536847231
+1600-1799,Did not play Stockfish best move,DTBMS only,96,9133,0.3788771542344936
+1600-1799,Did not play Stockfish best move,1/N only,96,9133,-0.1944892168481543
+1600-1799,Did not play Stockfish best move,1/sqrt(N) only,96,9133,-0.1944892168481543
+1600-1799,Did not play Stockfish best move,1/log2(N+1) only,96,9133,-0.1944892168481543
+1800-1999,Next-move error > 50 cp,GMR: 1 - GMR,99,10701,0.448056528717589
+1800-1999,Next-move error > 50 cp,DTBMS + 1/N,99,10701,0.07777558809336027
+1800-1999,Next-move error > 50 cp,DTBMS + 1/sqrt(N),99,10701,0.06449396438609273
+1800-1999,Next-move error > 50 cp,DTBMS + 1/log2(N+1),99,10701,0.061363879854086284
+1800-1999,Next-move error > 50 cp,DTBMS only,99,10701,-0.16483796766194175
+1800-1999,Next-move error > 50 cp,1/N only,99,10701,0.40934612382741536
+1800-1999,Next-move error > 50 cp,1/sqrt(N) only,99,10701,0.40934612382741536
+1800-1999,Next-move error > 50 cp,1/log2(N+1) only,99,10701,0.40934612382741536
+1800-1999,Did not play Stockfish best move,GMR: 1 - GMR,99,10701,-0.2138233297745
+1800-1999,Did not play Stockfish best move,DTBMS + 1/N,99,10701,0.2628372341205913
+1800-1999,Did not play Stockfish best move,DTBMS + 1/sqrt(N),99,10701,0.26896623255737634
+1800-1999,Did not play Stockfish best move,DTBMS + 1/log2(N+1),99,10701,0.2732176017971555
+1800-1999,Did not play Stockfish best move,DTBMS only,99,10701,0.4014869801601833
+1800-1999,Did not play Stockfish best move,1/N only,99,10701,-0.2369424014373997
+1800-1999,Did not play Stockfish best move,1/sqrt(N) only,99,10701,-0.2369424014373997
+1800-1999,Did not play Stockfish best move,1/log2(N+1) only,99,10701,-0.2369424014373997
+2000-2199,Next-move error > 50 cp,GMR: 1 - GMR,86,6003,0.4290255038172403
+2000-2199,Next-move error > 50 cp,DTBMS + 1/N,86,6003,0.10384521632970563
+2000-2199,Next-move error > 50 cp,DTBMS + 1/sqrt(N),86,6003,0.08194605657723766
+2000-2199,Next-move error > 50 cp,DTBMS + 1/log2(N+1),86,6003,0.0845822970304268
+2000-2199,Next-move error > 50 cp,DTBMS only,86,6003,-0.1903779887689368
+2000-2199,Next-move error > 50 cp,1/N only,86,6003,0.39265099984542784
+2000-2199,Next-move error > 50 cp,1/sqrt(N) only,86,6003,0.39265099984542784
+2000-2199,Next-move error > 50 cp,1/log2(N+1) only,86,6003,0.39265099984542784
+2000-2199,Did not play Stockfish best move,GMR: 1 - GMR,86,6003,-0.20226457836637224
+2000-2199,Did not play Stockfish best move,DTBMS + 1/N,86,6003,0.18616763749485313
+2000-2199,Did not play Stockfish best move,DTBMS + 1/sqrt(N),86,6003,0.20151232278965303
+2000-2199,Did not play Stockfish best move,DTBMS + 1/log2(N+1),86,6003,0.1968552239368794
+2000-2199,Did not play Stockfish best move,DTBMS only,86,6003,0.35168086404624277
+2000-2199,Did not play Stockfish best move,1/N only,86,6003,-0.22855148010564863
+2000-2199,Did not play Stockfish best move,1/sqrt(N) only,86,6003,-0.22855148010564863
+2000-2199,Did not play Stockfish best move,1/log2(N+1) only,86,6003,-0.22855148010564863
+2200-2399,Next-move error > 50 cp,GMR: 1 - GMR,38,1451,0.3757274463674318
+2200-2399,Next-move error > 50 cp,DTBMS + 1/N,38,1451,0.12075844673241563
+2200-2399,Next-move error > 50 cp,DTBMS + 1/sqrt(N),38,1451,0.1045966188002733
+2200-2399,Next-move error > 50 cp,DTBMS + 1/log2(N+1),38,1451,0.11101287653782678
+2200-2399,Next-move error > 50 cp,DTBMS only,38,1451,-0.1374920905104313
+2200-2399,Next-move error > 50 cp,1/N only,38,1451,0.3253964808338582
+2200-2399,Next-move error > 50 cp,1/sqrt(N) only,38,1451,0.3253964808338582
+2200-2399,Next-move error > 50 cp,1/log2(N+1) only,38,1451,0.3253964808338582
+2200-2399,Did not play Stockfish best move,GMR: 1 - GMR,38,1451,-0.249794706121455
+2200-2399,Did not play Stockfish best move,DTBMS + 1/N,38,1451,0.24056113566644383
+2200-2399,Did not play Stockfish best move,DTBMS + 1/sqrt(N),38,1451,0.26346650120370435
+2200-2399,Did not play Stockfish best move,DTBMS + 1/log2(N+1),38,1451,0.240434164365777
+2200-2399,Did not play Stockfish best move,DTBMS only,38,1451,0.46014868689495475
+2200-2399,Did not play Stockfish best move,1/N only,38,1451,-0.3056501175589776
+2200-2399,Did not play Stockfish best move,1/sqrt(N) only,38,1451,-0.3056501175589776
+2200-2399,Did not play Stockfish best move,1/log2(N+1) only,38,1451,-0.3056501175589776

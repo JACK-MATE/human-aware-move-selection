@@ -1,0 +1,785 @@
+{
+  "validation_type": "Position-level holdout validation using ranks 501-600.",
+  "holdout_positions": 100,
+  "rating_specific_rows": 398,
+  "method": "The same structural metric definitions and empirical targets as in the development analysis are recalculated on previously unused holdout positions. Validation is based on Spearman rank correlation only. No model parameters are fitted on the holdout dataset.",
+  "metric_parameters": {
+    "good_move_max_loss_cp": 50,
+    "good_move_depth": 15,
+    "dtbms_min_depth": 6,
+    "dtbms_candidate_max_depth": 20,
+    "dtbms_search_max_depth": 24,
+    "dtbms_step": 2,
+    "dtbms_stable_steps": 3,
+    "stockfish_threads": 1,
+    "stockfish_hash_mb": 32,
+    "stockfish_wdl_pov": "side_to_move"
+  },
+  "diagnostics": {
+    "dataset_positions": 100,
+    "metric_positions": 100,
+    "matched_positions": 100,
+    "missing_metric_positions": [],
+    "missing_best_move_positions": [],
+    "missing_move_observations": 0,
+    "missing_moves": [],
+    "dts_normalization_min": 6.0,
+    "dts_normalization_max": 22.0
+  },
+  "overall_spearman_results": [
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "GMR: 1 - GMR",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.4703123595599972
+    },
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/N",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.09392122134886849
+    },
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.08108303531615768
+    },
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.07563086647737269
+    },
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": -0.16389482224183566
+    },
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "1/N only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.4270433077489948
+    },
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "1/sqrt(N) only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.4270433077489948
+    },
+    {
+      "target": "Next-move error > 50 cp",
+      "model": "1/log2(N+1) only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.4270433077489948
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "GMR: 1 - GMR",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": -0.21079305077452207
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/N",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.2637215193075305
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.26620642321850024
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.27117120864626615
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": 0.3926821057163932
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "1/N only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": -0.23504097126627557
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "1/sqrt(N) only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": -0.23504097126627557
+    },
+    {
+      "target": "Did not play Stockfish best move",
+      "model": "1/log2(N+1) only",
+      "positions": 100,
+      "observations": 32181,
+      "spearman_rho": -0.23504097126627557
+    }
+  ],
+  "rating_spearman_results": [
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "GMR: 1 - GMR",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.5254334726605806
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/N",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.0013111278424082539
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": -0.0017621635201747626
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": -0.01970708371970315
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": -0.2849889956842257
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "1/N only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.4901382084366367
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "1/sqrt(N) only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.4901382084366367
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Next-move error > 50 cp",
+      "model": "1/log2(N+1) only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.4901382084366367
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "GMR: 1 - GMR",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": -0.22156660878417814
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/N",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.27156349256902723
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.27303797931059687
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.27832777917063883
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": 0.4057414358672183
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "1/N only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": -0.24943890553603615
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "1/sqrt(N) only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": -0.24943890553603615
+    },
+    {
+      "rating_bucket": "1400-1599",
+      "target": "Did not play Stockfish best move",
+      "model": "1/log2(N+1) only",
+      "positions": 79,
+      "observations": 4560,
+      "spearman_rho": -0.24943890553603615
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "GMR: 1 - GMR",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.45653182626509137
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/N",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.08091254516995994
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.07069316590522436
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.06301081801218515
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": -0.19738068282223434
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "1/N only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.41242225014068845
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "1/sqrt(N) only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.41242225014068845
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Next-move error > 50 cp",
+      "model": "1/log2(N+1) only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.41242225014068845
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "GMR: 1 - GMR",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": -0.17003062670120025
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/N",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.2929273780834348
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.2904768301851287
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.297060536847231
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": 0.3788771542344936
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "1/N only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": -0.1944892168481543
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "1/sqrt(N) only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": -0.1944892168481543
+    },
+    {
+      "rating_bucket": "1600-1799",
+      "target": "Did not play Stockfish best move",
+      "model": "1/log2(N+1) only",
+      "positions": 96,
+      "observations": 9133,
+      "spearman_rho": -0.1944892168481543
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "GMR: 1 - GMR",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.448056528717589
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/N",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.07777558809336027
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.06449396438609273
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.061363879854086284
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": -0.16483796766194175
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "1/N only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.40934612382741536
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "1/sqrt(N) only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.40934612382741536
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Next-move error > 50 cp",
+      "model": "1/log2(N+1) only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.40934612382741536
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "GMR: 1 - GMR",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": -0.2138233297745
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/N",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.2628372341205913
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.26896623255737634
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.2732176017971555
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": 0.4014869801601833
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "1/N only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": -0.2369424014373997
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "1/sqrt(N) only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": -0.2369424014373997
+    },
+    {
+      "rating_bucket": "1800-1999",
+      "target": "Did not play Stockfish best move",
+      "model": "1/log2(N+1) only",
+      "positions": 99,
+      "observations": 10701,
+      "spearman_rho": -0.2369424014373997
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "GMR: 1 - GMR",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.4290255038172403
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/N",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.10384521632970563
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.08194605657723766
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.0845822970304268
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": -0.1903779887689368
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "1/N only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.39265099984542784
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "1/sqrt(N) only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.39265099984542784
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Next-move error > 50 cp",
+      "model": "1/log2(N+1) only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.39265099984542784
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "GMR: 1 - GMR",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": -0.20226457836637224
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/N",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.18616763749485313
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.20151232278965303
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.1968552239368794
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": 0.35168086404624277
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "1/N only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": -0.22855148010564863
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "1/sqrt(N) only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": -0.22855148010564863
+    },
+    {
+      "rating_bucket": "2000-2199",
+      "target": "Did not play Stockfish best move",
+      "model": "1/log2(N+1) only",
+      "positions": 86,
+      "observations": 6003,
+      "spearman_rho": -0.22855148010564863
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "GMR: 1 - GMR",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.3757274463674318
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/N",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.12075844673241563
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.1045966188002733
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.11101287653782678
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "DTBMS only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": -0.1374920905104313
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "1/N only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.3253964808338582
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "1/sqrt(N) only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.3253964808338582
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Next-move error > 50 cp",
+      "model": "1/log2(N+1) only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.3253964808338582
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "GMR: 1 - GMR",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": -0.249794706121455
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/N",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.24056113566644383
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/sqrt(N)",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.26346650120370435
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS + 1/log2(N+1)",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.240434164365777
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "DTBMS only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": 0.46014868689495475
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "1/N only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": -0.3056501175589776
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "1/sqrt(N) only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": -0.3056501175589776
+    },
+    {
+      "rating_bucket": "2200-2399",
+      "target": "Did not play Stockfish best move",
+      "model": "1/log2(N+1) only",
+      "positions": 38,
+      "observations": 1451,
+      "spearman_rho": -0.3056501175589776
+    }
+  ]
+}

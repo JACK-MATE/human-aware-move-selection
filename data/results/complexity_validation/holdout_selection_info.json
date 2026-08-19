@@ -1,0 +1,19 @@
+{
+  "source_dataset": "C:\\Users\\User\\PycharmProjects\\PythonProject\\data\\results\\test_dataset_aggregated.json",
+  "development_dataset": "C:\\Users\\User\\PycharmProjects\\PythonProject\\data\\results\\test_dataset_aggregated_top500.json",
+  "source_positions": 3905,
+  "development_ranks": [
+    1,
+    500
+  ],
+  "holdout_ranks": [
+    501,
+    600
+  ],
+  "holdout_positions": 100,
+  "development_holdout_fen_overlap": 0,
+  "highest_holdout_occurrences": 363,
+  "lowest_holdout_occurrences": 326,
+  "total_holdout_observations": 34407,
+  "selection_rule": "total_occurrences descending; FEN alphabetical tie-break"
+}
