@@ -8,13 +8,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import chess.engine
 
-from maia.maia_adapter import (
-    Maia3Adapter
-)
-
-from maia.maia_simulation import (
-    simulate_observed_move
-)
+from maia.maia_adapter import Maia3Adapter
+from maia.maia_simulation import simulate_observed_move
 
 
 # =============================================================
@@ -35,7 +30,7 @@ RATING_BUCKETS = {
     "1600-1799": 1700,
     "1800-1999": 1900,
     "2000-2199": 2100,
-    "2200-2399": 2300
+    "2200-2399": 2300,
 }
 
 
@@ -45,10 +40,8 @@ RATING_BUCKETS = {
 
 MIN_BUCKET_OBSERVATIONS = 10
 
-
-# For the actually observed ROOT moves:
-# simulate only the most frequent moves until >=90% of real
-# observations in FEN × bucket are covered.
+# Only the most frequent actually observed moves are simulated
+# until >= 90% of the observations in FEN x bucket are covered.
 OBSERVED_MOVE_COVERAGE = 0.90
 
 
@@ -56,27 +49,20 @@ OBSERVED_MOVE_COVERAGE = 0.90
 # MAIA TREE
 # =============================================================
 
-# -------------------------------------------------------------
-# Player whose observed move is being evaluated
-# -------------------------------------------------------------
-
+# Own continuations:
+# keep moves with Maia probability > 20%.
+# If none exists, keep Maia's most likely move.
 OWN_MIN_MOVE_PROBABILITY = 0.20
 
 
-# -------------------------------------------------------------
-# Opponent
-# -------------------------------------------------------------
-
+# Opponent continuations:
+# maximum Top 3, each with at least 5% probability.
+# If none exists, keep Maia's most likely move.
 OPPONENT_TOP_N = 3
-
 OPPONENT_MIN_MOVE_PROBABILITY = 0.05
 
 
-# -------------------------------------------------------------
-# Tree depth
-# -------------------------------------------------------------
-
-# 3 complete moves AFTER the observed move.
+# Three complete moves AFTER the observed move.
 MAIA_PLIES_AFTER_OBSERVED_MOVE = 6
 
 
@@ -85,9 +71,7 @@ MAIA_PLIES_AFTER_OBSERVED_MOVE = 6
 # =============================================================
 
 STOCKFISH_LEAF_DEPTH = 12
-
 STOCKFISH_THREADS = 1
-
 STOCKFISH_HASH_MB = 32
 
 
@@ -109,17 +93,31 @@ USE_LEAF_CACHE = True
 # TEST LIMIT
 # =============================================================
 
-# Keep at 1 for the next runtime test.
+# None = complete dataset.
 MAX_SIMULATIONS = None
 
 
 # =============================================================
-# CHECKPOINT
+# CHECKPOINT / SAVE SETTINGS
 # =============================================================
 
-CHECKPOINT_EVERY = 1
+# Saving after every single simulation caused many thousands of
+# file replacements and triggered a transient Windows file-lock.
+#
+# Saving every 10 simulations is much less aggressive.
+# In the worst case only the last <=9 simulations have to be
+# repeated after an unexpected crash.
+CHECKPOINT_EVERY = 10
 
 RESUME = True
+
+
+# Windows can temporarily lock a JSON file, e.g. because of
+# indexing, antivirus scanning or another short-lived file access.
+#
+# Instead of immediately aborting, retry the atomic replacement.
+SAVE_RETRIES = 20
+SAVE_RETRY_DELAY_SECONDS = 0.5
 
 
 # =============================================================
@@ -148,11 +146,9 @@ def get_bucket_data(
         {}
     )
 
-
     wanted = normalize_bucket_name(
         wanted_bucket
     )
-
 
     for (
         bucket_name,
@@ -165,9 +161,7 @@ def get_bucket_data(
             )
             == wanted
         ):
-
             return bucket_data
-
 
     return None
 
@@ -182,7 +176,6 @@ def get_move_counts(
 
     counts = {}
 
-
     for (
         move_uci,
         move_data
@@ -191,7 +184,6 @@ def get_move_counts(
         {}
     ).items():
 
-
         count = int(
             move_data.get(
                 "count",
@@ -199,13 +191,10 @@ def get_move_counts(
             )
         )
 
-
         if count > 0:
-
             counts[
                 move_uci
             ] = count
-
 
     return counts
 
@@ -222,11 +211,8 @@ def select_observed_moves(
         move_counts.values()
     )
 
-
     if total_observations == 0:
-
         return [], 0
-
 
     ordered_moves = sorted(
         move_counts.items(),
@@ -236,17 +222,13 @@ def select_observed_moves(
         )
     )
 
-
     selected = []
-
     selected_observations = 0
-
 
     for (
         move_uci,
         count
     ) in ordered_moves:
-
 
         selected.append(
             (
@@ -255,18 +237,14 @@ def select_observed_moves(
             )
         )
 
-
         selected_observations += count
-
 
         if (
             selected_observations
             / total_observations
             >= required_coverage
         ):
-
             break
-
 
     return (
         selected,
@@ -280,7 +258,6 @@ def select_observed_moves(
 
 class MaiaRunner:
 
-
     def run(
         self,
         dataset_path: Path,
@@ -288,35 +265,40 @@ class MaiaRunner:
         stockfish_directory: Path
     ) -> None:
 
+        # =====================================================
+        # SAFETY
+        # =====================================================
 
         if (
             dataset_path.resolve()
             == output_path.resolve()
         ):
-
             raise ValueError(
                 "Input and output path must be different."
             )
 
+        # =====================================================
+        # LOAD DATA
+        # =====================================================
 
         dataset = self.load_dataset(
             dataset_path
         )
 
-
         parameters = self.get_parameters()
-
 
         results = self.load_checkpoint(
             output_path,
             parameters
         )
 
+        # =====================================================
+        # BUILD COMPLETE WORKLOAD
+        # =====================================================
 
         tasks = self.build_tasks(
             dataset
         )
-
 
         pending_tasks = [
             task
@@ -327,6 +309,10 @@ class MaiaRunner:
             )
         ]
 
+        completed_before_run = (
+            len(tasks)
+            - len(pending_tasks)
+        )
 
         print(
             f"Top dataset FENs: "
@@ -340,9 +326,12 @@ class MaiaRunner:
 
         print(
             f"Already completed: "
-            f"{len(tasks) - len(pending_tasks):,}"
+            f"{completed_before_run:,}"
         )
 
+        # =====================================================
+        # OPTIONAL TEST LIMIT
+        # =====================================================
 
         if MAX_SIMULATIONS is not None:
 
@@ -350,22 +339,24 @@ class MaiaRunner:
                 :MAX_SIMULATIONS
             ]
 
-
         print(
             f"Simulations this run: "
             f"{len(pending_tasks):,}"
         )
 
-
         if not pending_tasks:
-
+            print(
+                "Nothing left to calculate."
+            )
             return
 
+        # =====================================================
+        # STOCKFISH PATH
+        # =====================================================
 
         stockfish_path = self.find_stockfish(
             stockfish_directory
         )
-
 
         # =====================================================
         # LOAD MAIA ONCE
@@ -376,11 +367,9 @@ class MaiaRunner:
             "Loading Maia-3..."
         )
 
-
         maia = Maia3Adapter(
             model_alias=MAIA_MODEL
         )
-
 
         print(
             f"Maia model: {MAIA_MODEL}"
@@ -390,9 +379,8 @@ class MaiaRunner:
             f"Maia device: {maia.device}"
         )
 
-
         # =====================================================
-        # STOCKFISH
+        # START STOCKFISH ONCE
         # =====================================================
 
         stockfish = (
@@ -403,27 +391,26 @@ class MaiaRunner:
             )
         )
 
-
         self.configure_stockfish(
             stockfish
         )
 
-
         try:
 
             current_root_fen = None
-
             leaf_cache = None
 
+            # =================================================
+            # RUN SIMULATIONS
+            # =================================================
 
             for (
-                index,
+                run_index,
                 task
             ) in enumerate(
                 pending_tasks,
                 start=1
             ):
-
 
                 (
                     fen,
@@ -435,6 +422,11 @@ class MaiaRunner:
                     move_observations
                 ) = task
 
+                # Absolute progress across the entire dataset.
+                absolute_index = (
+                    completed_before_run
+                    + run_index
+                )
 
                 # =============================================
                 # CACHE PER ROOT FEN
@@ -444,20 +436,17 @@ class MaiaRunner:
 
                     current_root_fen = fen
 
-
                     leaf_cache = (
                         {}
                         if USE_LEAF_CACHE
                         else None
                     )
 
-
-                start = time.perf_counter()
-
-
                 # =============================================
                 # SIMULATION
                 # =============================================
+
+                start = time.perf_counter()
 
                 simulation = simulate_observed_move(
 
@@ -494,12 +483,14 @@ class MaiaRunner:
                         leaf_cache
                 )
 
-
                 runtime = (
                     time.perf_counter()
                     - start
                 )
 
+                # =============================================
+                # STORE RESULT IN MEMORY
+                # =============================================
 
                 self.store_result(
 
@@ -534,7 +525,6 @@ class MaiaRunner:
                         runtime
                 )
 
-
                 # =============================================
                 # OUTPUT
                 # =============================================
@@ -542,8 +532,8 @@ class MaiaRunner:
                 print()
 
                 print(
-                    f"{index}/"
-                    f"{len(pending_tasks)}"
+                    f"{absolute_index}/"
+                    f"{len(tasks)}"
                 )
 
                 print(
@@ -618,12 +608,20 @@ class MaiaRunner:
                     f"{simulation['average_wdl']['loss']:.1f}"
                 )
 
+                # =============================================
+                # CHECKPOINT
+                # =============================================
 
                 if (
-                    index
+                    run_index
                     % CHECKPOINT_EVERY
                     == 0
                 ):
+
+                    print(
+                        f"Saving checkpoint at "
+                        f"{absolute_index}/{len(tasks)}..."
+                    )
 
                     self.save_results(
                         output_path,
@@ -631,6 +629,14 @@ class MaiaRunner:
                         results
                     )
 
+            # =================================================
+            # FINAL SAVE
+            # =================================================
+
+            print()
+            print(
+                "Saving final Maia results..."
+            )
 
             self.save_results(
                 output_path,
@@ -638,6 +644,9 @@ class MaiaRunner:
                 results
             )
 
+            print(
+                "Maia analysis finished successfully."
+            )
 
         finally:
 
@@ -653,70 +662,56 @@ class MaiaRunner:
         dataset: Dict[str, Any]
     ) -> List[Tuple]:
 
-
         tasks = []
-
 
         for (
             fen,
             root_data
         ) in dataset.items():
 
-
             for (
                 bucket,
                 elo
             ) in RATING_BUCKETS.items():
-
 
                 bucket_data = get_bucket_data(
                     root_data,
                     bucket
                 )
 
-
                 if bucket_data is None:
-
                     continue
-
 
                 move_counts = get_move_counts(
                     bucket_data
                 )
 
-
                 bucket_observations = sum(
                     move_counts.values()
                 )
-
 
                 if (
                     bucket_observations
                     < MIN_BUCKET_OBSERVATIONS
                 ):
-
                     continue
-
 
                 (
                     selected_moves,
                     selected_observations
-                ) = (
-                    select_observed_moves(
-                        move_counts=
-                            move_counts,
+                ) = select_observed_moves(
 
-                        required_coverage=
-                            OBSERVED_MOVE_COVERAGE
-                    )
+                    move_counts=
+                        move_counts,
+
+                    required_coverage=
+                        OBSERVED_MOVE_COVERAGE
                 )
-
 
                 for (
                     move_uci,
                     move_observations
                 ) in selected_moves:
-
 
                     tasks.append(
                         (
@@ -730,12 +725,11 @@ class MaiaRunner:
                         )
                     )
 
-
         return tasks
 
 
     # =========================================================
-    # STORE
+    # STORE RESULT
     # =========================================================
 
     def store_result(
@@ -752,12 +746,10 @@ class MaiaRunner:
         runtime_seconds
     ):
 
-
         position_result = results.setdefault(
             fen,
             {}
         )
-
 
         bucket_result = (
             position_result.setdefault(
@@ -784,12 +776,12 @@ class MaiaRunner:
             )
         )
 
-
         bucket_result[
             "moves"
         ][
             move_uci
         ] = {
+
             "observations":
                 move_observations,
 
@@ -808,7 +800,7 @@ class MaiaRunner:
 
 
     # =========================================================
-    # RESUME
+    # RESUME CHECK
     # =========================================================
 
     def task_is_done(
@@ -816,7 +808,6 @@ class MaiaRunner:
         results,
         task
     ) -> bool:
-
 
         (
             fen,
@@ -827,7 +818,6 @@ class MaiaRunner:
             move_uci,
             _
         ) = task
-
 
         return (
             move_uci
@@ -846,8 +836,14 @@ class MaiaRunner:
         self
     ) -> Dict[str, Any]:
 
+        # IMPORTANT:
+        #
+        # Do NOT include checkpoint frequency or retry settings
+        # here. They do not alter the scientific calculation and
+        # therefore should not invalidate an existing checkpoint.
 
         return {
+
             "schema_version":
                 4,
 
@@ -902,7 +898,7 @@ class MaiaRunner:
 
 
     # =========================================================
-    # JSON
+    # LOAD DATASET
     # =========================================================
 
     def load_dataset(
@@ -910,14 +906,12 @@ class MaiaRunner:
         path
     ):
 
-
         if not path.exists():
 
             raise FileNotFoundError(
                 "Dataset not found:\n"
                 + str(path)
             )
-
 
         with open(
             path,
@@ -930,20 +924,21 @@ class MaiaRunner:
             )
 
 
+    # =========================================================
+    # LOAD CHECKPOINT
+    # =========================================================
+
     def load_checkpoint(
         self,
         output_path,
         parameters
     ):
 
-
         if (
             not RESUME
             or not output_path.exists()
         ):
-
             return {}
-
 
         with open(
             output_path,
@@ -955,18 +950,19 @@ class MaiaRunner:
                 file
             )
 
-
         if (
-            old_output.get("parameters")
+            old_output.get(
+                "parameters"
+            )
             != parameters
         ):
 
             raise ValueError(
                 "Existing maia_results.json uses different "
                 "parameters.\n"
-                "Delete or rename it before starting."
+                "Do NOT delete it automatically. Check the "
+                "parameters first."
             )
-
 
         return old_output.get(
             "positions",
@@ -974,25 +970,49 @@ class MaiaRunner:
         )
 
 
+    # =========================================================
+    # ROBUST ATOMIC SAVE
+    # =========================================================
+
     def save_results(
         self,
         output_path,
         parameters,
         results
-    ):
+    ) -> None:
+        """
+        Writes the complete current checkpoint to a temporary
+        file and atomically replaces maia_results.json.
 
+        Windows may temporarily lock the destination file.
+        In that case the replacement is retried automatically.
+
+        The old valid maia_results.json remains untouched until
+        the new JSON has been written completely.
+        """
 
         output_path.parent.mkdir(
             parents=True,
             exist_ok=True
         )
 
+        output = {
+            "parameters":
+                parameters,
 
-        temporary_path = output_path.with_suffix(
-            output_path.suffix
-            + ".tmp"
+            "positions":
+                results
+        }
+
+        # Unique temporary path for this Python process.
+        temporary_path = output_path.with_name(
+            output_path.name
+            + f".tmp.{os.getpid()}"
         )
 
+        # -----------------------------------------------------
+        # WRITE COMPLETE TEMP FILE
+        # -----------------------------------------------------
 
         with open(
             temporary_path,
@@ -1001,22 +1021,118 @@ class MaiaRunner:
         ) as file:
 
             json.dump(
-                {
-                    "parameters":
-                        parameters,
-
-                    "positions":
-                        results
-                },
+                output,
                 file,
                 indent=2,
                 ensure_ascii=False
             )
 
+            # Force Python's buffer to disk before replacement.
+            file.flush()
+            os.fsync(
+                file.fileno()
+            )
 
-        temporary_path.replace(
-            output_path
+        # -----------------------------------------------------
+        # ATOMIC REPLACE WITH WINDOWS RETRIES
+        # -----------------------------------------------------
+
+        last_error = None
+
+        for attempt in range(
+            1,
+            SAVE_RETRIES + 1
+        ):
+
+            try:
+
+                os.replace(
+                    temporary_path,
+                    output_path
+                )
+
+                return
+
+            except PermissionError as error:
+
+                last_error = error
+
+            except OSError as error:
+
+                # Windows:
+                # 5  = Access denied
+                # 32 = Sharing violation
+                if getattr(
+                    error,
+                    "winerror",
+                    None
+                ) not in (
+                    5,
+                    32
+                ):
+                    raise
+
+                last_error = error
+
+            if attempt < SAVE_RETRIES:
+
+                print(
+                    f"Checkpoint file temporarily locked. "
+                    f"Retry {attempt}/{SAVE_RETRIES}..."
+                )
+
+                time.sleep(
+                    SAVE_RETRY_DELAY_SECONDS
+                )
+
+        # -----------------------------------------------------
+        # EMERGENCY CHECKPOINT
+        # -----------------------------------------------------
+
+        # If Windows blocked the normal file for the entire retry
+        # period, preserve the newest valid JSON under a separate
+        # filename before stopping.
+
+        timestamp = time.strftime(
+            "%Y%m%d_%H%M%S"
         )
+
+        emergency_path = output_path.with_name(
+            output_path.stem
+            + "_emergency_"
+            + timestamp
+            + output_path.suffix
+        )
+
+        try:
+
+            os.replace(
+                temporary_path,
+                emergency_path
+            )
+
+            raise RuntimeError(
+                "Could not replace maia_results.json after "
+                f"{SAVE_RETRIES} attempts.\n"
+                "The newest results were preserved here:\n"
+                + str(
+                    emergency_path
+                )
+            ) from last_error
+
+        except RuntimeError:
+            raise
+
+        except Exception as emergency_error:
+
+            raise RuntimeError(
+                "Could not save the normal checkpoint and could "
+                "not create the emergency checkpoint.\n"
+                "Temporary file may still exist here:\n"
+                + str(
+                    temporary_path
+                )
+            ) from emergency_error
 
 
     # =========================================================
@@ -1028,7 +1144,6 @@ class MaiaRunner:
         engine
     ):
 
-
         if "Threads" in engine.options:
 
             engine.configure(
@@ -1037,7 +1152,6 @@ class MaiaRunner:
                         STOCKFISH_THREADS
                 }
             )
-
 
         if "Hash" in engine.options:
 
@@ -1048,13 +1162,11 @@ class MaiaRunner:
                 }
             )
 
-
         if "UCI_ShowWDL" not in engine.options:
 
             raise RuntimeError(
                 "Stockfish does not expose UCI_ShowWDL."
             )
-
 
         engine.configure(
             {
@@ -1069,6 +1181,14 @@ class MaiaRunner:
         directory
     ):
 
+        if not directory.exists():
+
+            raise FileNotFoundError(
+                "Stockfish directory not found:\n"
+                + str(
+                    directory
+                )
+            )
 
         candidates = [
             path
@@ -1078,7 +1198,8 @@ class MaiaRunner:
                 "stockfish"
             )
             and (
-                path.suffix.lower() == ".exe"
+                path.suffix.lower()
+                == ".exe"
                 or os.access(
                     str(path),
                     os.X_OK
@@ -1086,14 +1207,14 @@ class MaiaRunner:
             )
         ]
 
-
         if len(candidates) != 1:
 
             raise RuntimeError(
                 "Expected exactly one Stockfish executable in:\n"
-                + str(directory)
+                + str(
+                    directory
+                )
             )
-
 
         return candidates[0]
 
@@ -1104,14 +1225,12 @@ class MaiaRunner:
 
 if __name__ == "__main__":
 
-
     dataset_file = (
         PROJECT_ROOT
         / "data"
         / "results"
         / "test_dataset_aggregated_top500.json"
     )
-
 
     output_file = (
         PROJECT_ROOT
@@ -1120,13 +1239,11 @@ if __name__ == "__main__":
         / "maia_results.json"
     )
 
-
     stockfish_directory = (
         PROJECT_ROOT
         / "engines"
         / "stockfish"
     )
-
 
     MaiaRunner().run(
         dataset_path=
